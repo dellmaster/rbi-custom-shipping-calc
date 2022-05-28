@@ -190,21 +190,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       // all other products we put in courier box
                       $courier_packet_products[] = $values;
                     }
-
-
-
-
-                    /*foreach ($one_product_categories as $category) {
-                      if (in_array($category, $category_id_can_be_shipped['courier'])) {
-                        $courier_packet_products[] = $values;
-                      }
-                      elseif (in_array($category, $category_id_can_be_shipped['small_pallet'])) {
-                        $small_pallet_products[] = $values;
-                      }
-                      elseif (in_array($category, $category_id_can_be_shipped['big_pallet'])) {
-                        $big_pallet_products[] = $values;
-                      }
-                    }*/
                   }
 
                   if (count($big_pallet_products) > 0){
