@@ -212,29 +212,32 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $left_volume_in_big_pallet = $need_big_pallet_by_volume['left'];
 
                     // if we need more
-                    if ($left_weight_in_big_pallet > $other_products_weight  &&  $left_volume_in_big_pallet > $other_products_volume) return $order_shipping_content; // We put all products on the big pallet
+                    if ($left_weight_in_big_pallet < $other_products_weight  ||  $left_volume_in_big_pallet < $other_products_volume) {
+                      // We can't put all products on the big pallet
+
+                      $small_pallet_products_items = $this->create_items_array($small_pallet_products);
+                      $small_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($small_pallet_products_items);
+
+                      $put_big_pallet_response_sp = put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+
+                      //$left_sp_products_after_bp =
+                      //$response_array['in_pack_items_array']
+                      //$response_array['not_in_pack_items_array']
+                      //$response_array['weight_left']
+                      //$response_array['volume_left']
+                      if ($put_big_pallet_response_sp['weight_left'] > 0 && $put_big_pallet_response_sp['volume_left'] > 0) {
+                        //if we have space - try put courier products
+                        $courier_products_items = $this->create_items_array($courier_packet_products);
+                        $courier_items_sort_more_volume = $this->sort_products_put_more_volume($courier_products_items);
+
+                        $put_big_pallet_response_cb = put_products_in_volume_and_weight($courier_items_sort_more_volume, $put_big_pallet_response_sp['weight_left'], $put_big_pallet_response_sp['volume_left']);
+
+                      }
+
+                    }
                     //если всё не влазит на большие палеты - нужно высчитать отделить товары (с максимальным объемом) которые туда влезут, а остальные отправить на упаковку на следующий этап
 
 
-
-                    if ($left_weight_in_big_pallet < $other_products_weight  ||  $left_volume_in_big_pallet < $other_products_volume) { // nee check by volume?? big pallet have volume limit?
-                      // Check can we put all products whict need small paletts to big pallet left space
-
-                      if ()
-                      $need_small_pallet_by_weight = $this->calc_pallets_by_weight($small_pallet_products, 'small_pallet');
-
-                      $need_small_pallet_by_volume = $this->calc_pallets_by_volume($small_pallet_products, 'small_pallet');
-
-                      $need_small_pallet_by_weight_calc = $need_small_pallet_by_weight['float'] - $need_big_pallet_by_weight['left']/$this->shipping_variant['small_pallet']['max_weight'];
-
-                      $need_small_pallet_by_volume_calc = $need_small_pallet_by_volume['float'] -  $need_big_pallet_by_volume['left']/$this->pack_max_volume('small_pallet');
-
-                      $need_small_pallet = cail(max($need_small_pallet_by_weight_calc, $need_small_pallet_by_volume_calc));
-
-
-
-                    }
-                    else return $order_shipping_content; // We put all products on the big pallet
 
 
                   }
@@ -260,6 +263,23 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
 
                 }
+///////////////////////////////////////////////////////
+/////////////// Functions  ////////////////////////////
+///////////////////////////////////////////////////////
+
+                public function add_volume_to_product_array($products_list) {
+                  $result_array = array();
+                  foreach ($products_list as $one_value) {
+                    $one_product = $one_value['data'];
+
+                    $one_value['rbi_item_volume'] = ($one_product->get_width()/100) * ($one_product->get_height()/100) * ($one_product->get_length()/100);
+                    $result_array[] = $one_value;
+                  }
+
+                  return $result_array;
+                }
+
+
 
                 //создание массива с единицами товара
                 public function create_items_array($products_list) {
@@ -271,11 +291,39 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     }
                     $k = $k + $one_value['quantity'];
                   }
+                  return $items;
                 }
 
+                // Try put items in weight and volume
                 public function put_products_in_volume_and_weight($items, $free_weight, $free_volume)
                 {
+                  $response_array = array();
+                  $in_pack_items_array = array();
+                  $not_in_pack_items_array = array();
+                  $space_left = 1;
+                  $weight_left = $free_weight;
+                  $volume_left = $free_volume;
 
+                  foreach ($items as $item) {
+                    $item_details = $item['data'];
+                    $item_volume = ($item_details->get_width()/100) * ($item_details->get_height()/100) * ($item_details->get_length()/100)
+                    if ((($free_weight - $item_details->get_weight()) >= 0) && ($free_volume - $item_volume) >= 0) {
+                      $in_pack_items_array[] = $item;
+                      $weight_left = $weight_left - $item_details->get_weight();
+                      $volume_left = $volume_left - $item_volume;
+                    }
+                    else {
+                      $not_in_pack_items_array[] = $item;
+                    }
+
+                  $response_array['in_pack_items_array'] = $in_pack_items_array;
+                  $response_array['not_in_pack_items_array'] = $not_in_pack_items_array;
+                  $response_array['weight_left'] = $weight_left;
+                  $response_array['volume_left'] = $volume_left;
+
+                  }
+
+                  return $response_array;
                 }
 
                 // calc products weight from given products list
@@ -302,6 +350,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                   return $total_volume;
                 }
 
+                //calc kg|m3 rate for each product
                 public function products_weight_and_volume_rate($products_list) {
                   $new_products = array();
                   foreach ($products_list as $one_value) {
