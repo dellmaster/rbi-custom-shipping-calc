@@ -176,8 +176,25 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                   //separate products by category of shipping
                   foreach ( $package['contents'] as  $values ) {
                     $one_product = $values['data'];
-                    $one_product_categories =  $one_product->get_category_ids();
-                    foreach ($one_product_categories as $category) {
+                    //$one_product_categories =  $one_product->get_category_ids();
+                    $product_max_size = product_max_size($one_product);
+                    if ($product_max_size > $this->small_pallet_max_length) {
+                      //need big pallet
+                      $big_pallet_products[] = $values;
+                    }
+                    elseif($product_max_size > $this->courier_max_length) {
+                      //need small pallet
+                      $small_pallet_products[] = $values;
+                    }
+                    else {
+                      // all other products we put in courier box
+                      $courier_packet_products[] = $values;
+                    }
+
+
+
+
+                    /*foreach ($one_product_categories as $category) {
                       if (in_array($category, $category_id_can_be_shipped['courier'])) {
                         $courier_packet_products[] = $values;
                       }
@@ -187,7 +204,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       elseif (in_array($category, $category_id_can_be_shipped['big_pallet'])) {
                         $big_pallet_products[] = $values;
                       }
-                    }
+                    }*/
                   }
 
                   if (count($big_pallet_products) > 0){
@@ -236,7 +253,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
 
                   }
-                  //test2
+                  //
 
 
 
@@ -260,7 +277,6 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                 }
 
                 //создание массива с единицами товара
-
                 public function create_items_array($products_list) {
                   $items = array();
                   $k = 0;
@@ -270,6 +286,11 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     }
                     $k = $k + $one_value['quantity'];
                   }
+                }
+
+                public function put_products_in_volume_and_weight($items, $free_weight, $free_volume)
+                {
+
                 }
 
                 // calc products weight from given products list
@@ -283,10 +304,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                   return $total_weight;
                 }
 
-                public function put_products_in_volume_and_weight($items, $free_weight, $free_volume)
-                {
 
-                }
 
                 // calc products volume from given products list
                 public function calc_products_volume($products_list) {
