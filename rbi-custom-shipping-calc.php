@@ -211,6 +211,8 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
                     $left_volume_in_big_pallet = $need_big_pallet_by_volume['left'];
 
+                    $left_small_pallets_items = array();
+                    $lefr_courier_items = array();
                     // if we need more
                     if ($left_weight_in_big_pallet < $other_products_weight  ||  $left_volume_in_big_pallet < $other_products_volume) {
                       // We can't put all products on the big pallet
@@ -218,7 +220,9 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       $small_pallet_products_items = $this->create_items_array($small_pallet_products);
                       $small_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($small_pallet_products_items);
 
-                      $put_big_pallet_response_sp = put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+                      $put_big_pallet_response_sp = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+
+                      $left_small_pallets_items = $put_big_pallet_response_sp['not_in_pack_items_array'];
 
                       //$left_sp_products_after_bp =
                       //$response_array['in_pack_items_array']
@@ -230,18 +234,27 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         $courier_products_items = $this->create_items_array($courier_packet_products);
                         $courier_items_sort_more_volume = $this->sort_products_put_more_volume($courier_products_items);
 
-                        $put_big_pallet_response_cb = put_products_in_volume_and_weight($courier_items_sort_more_volume, $put_big_pallet_response_sp['weight_left'], $put_big_pallet_response_sp['volume_left']);
+                        $put_big_pallet_response_cp = put_products_in_volume_and_weight($courier_items_sort_more_volume, $put_big_pallet_response_sp['weight_left'], $put_big_pallet_response_sp['volume_left']);
+
+                        $lefr_courier_items = $put_big_pallet_response_cp['not_in_pack_items_array'];
 
                       }
 
                     }
+
+                    //нужно собрать в массивы оставшиеся товары и передать на следующий шаг
+
                     //если всё не влазит на большие палеты - нужно высчитать отделить товары (с максимальным объемом) которые туда влезут, а остальные отправить на упаковку на следующий этап
 
 
 
 
+
+
                   }
-                  //
+                  //теперь нужно написать функции укладки в маленькие палеты и укладки в курьерские коробки
+
+
 
 
 
@@ -306,7 +319,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
                   foreach ($items as $item) {
                     $item_details = $item['data'];
-                    $item_volume = ($item_details->get_width()/100) * ($item_details->get_height()/100) * ($item_details->get_length()/100)
+                    $item_volume = ($item_details->get_width()/100) * ($item_details->get_height()/100) * ($item_details->get_length()/100);
                     if ((($free_weight - $item_details->get_weight()) >= 0) && ($free_volume - $item_volume) >= 0) {
                       $in_pack_items_array[] = $item;
                       $weight_left = $weight_left - $item_details->get_weight();
@@ -404,12 +417,12 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                   $need_pallets['total_weight'] = $total_weight;
                   $need_pallets['left'] = $need_pallets['num'] * $this->shipping_variant[$pallet_type]['max_weight'] - $total_weight;
 
-                  return $need_packages;
+                  return $need_pallets;
                 }
 
                 //calculation of the number of pallets by volume and pallet type
                 public function calc_pallets_by_volume($products_list, $pallet_type) {
-                  $need_pallets = array();
+                  $need_big_pallets = array();
                   $total_volume = $this->calc_products_volume($products_list);
 
                   $pallet_max_volume = (($this->shipping_variant[$pallet_type]['max_width']/1000) * ($this->shipping_variant[$pallet_type]['max_height']/1000) * ($this->shipping_variant[$pallet_type]['max_length']/1000));
