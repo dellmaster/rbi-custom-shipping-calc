@@ -162,11 +162,11 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     'courier' => 0
                   );
                   //How we can get category IDs by shipping type??????
-                  $category_id_can_be_shipped = array(
+                  /*$category_id_can_be_shipped = array(
                     'courier' => array(1,2,3),
                     'small_pallet' => array(4,5,6),
                     'big_pallet' => array(7,8,9)
-                  );
+                  );*/
 
                   //Prepare arrays for pruducts by category
                   $courier_packet_products = array();
@@ -192,6 +192,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     }
                   }
 
+                  //create item array
                   $big_pallet_items = $this->create_items_array($big_pallet_products);
                   $small_pallet_items = $this->create_items_array($small_pallet_products);
                   $courier_packet_items = $this->create_items_array($courier_packet_products);
@@ -220,7 +221,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                     $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
 
                     if (count($big_pallet_items)>0){
-                      //if we have big pallet products - put it at big pallet
+                      //if we have big pallet items - put it at big pallet
                       $big_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($big_pallet_items);
                       $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($big_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
 
@@ -229,15 +230,17 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       $left_volume_in_big_pallet = $put_in_big_pallet_response['volume_left'];
 
                       if (count($put_in_big_pallet_response['in_pack_items_array']) > 0) $need_big_pallet++;
-                      //if we put some products at tha big pallet increase it
+                      //if we put some products at the big pallet increase it
 
                     }
                     else {
+                      //if we dont use big pallet - we dont have space on it
                       $left_weight_in_big_pallet = 0;
                       $left_volume_in_big_pallet = 0;
                     }
 
                     if (count($small_pallet_items) > 0) {
+                      //if we have small pallet items then 1st step put it on big pallet free space
                       $small_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($small_pallet_items);
                       $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
 
@@ -246,6 +249,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       $left_volume_in_big_pallet = $put_in_big_pallet_response['volume_left'];
 
                       if (count($small_pallet_items) > 0) {
+                        //if small pallet products left -  then 2nd step put it on small pallet free space
                         $small_pallet_items_sort_more_weight = $this->sort_products_put_more_weight($small_pallet_items);
                         $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
 
@@ -254,17 +258,18 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         $left_volume_in_small_pallet = $put_in_small_pallet_response['volume_left'];
 
                         if (count($put_in_small_pallet_response['in_pack_items_array']) > 0) $need_small_pallet++;
+                        //if we put some products to small pallet - increase it
                       }
 
                     }
                     else {
+                      //if we dont use small pallet - we dont have space on it
                       $left_weight_in_small_pallet = 0;
                       $left_volume_in_small_pallet = 0;
                     }
 
                     if (count($courier_packet_items) > 0) {
-
-                      // put courier items to big pallet free space
+                      //if we have courier items then 1st step put it on big pallet free space
                       $courier_packet_items_sort_more_volume = $this->sort_products_put_more_volume($courier_packet_items);
                       $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
 
@@ -273,13 +278,14 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       //$left_volume_in_big_pallet = $put_in_small_pallet_response['volume_left'];
 
                       if (count($courier_packet_items) > 0) {
-                        // put courier items to small pallet free space
+                        // if courier items left then 2nd step put courier items to small pallet free space
                         $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
                         $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
 
                         $courier_packet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
 
                         if (count($courier_packet_items) > 0) {
+                          // if courier items left then 3rd step put courier items to courier packet
                           //$courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
                           $put_in_courier_packet_response = $this->put_products_in_volume_and_weight($courier_packet_items, $left_weight_in_courier_pack, $left_volume_in_courier_pack);
 
@@ -294,90 +300,16 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       // code...
                     }
 
-
+                    $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
                   }
 
-                  if (count($big_pallet_products) > 0){
-
-
-
-                    //////////////////////////////////////////////////////////
-
-                    $need_big_pallet_by_weight = $this->calc_pallets_by_weight($big_pallet_products, 'big_pallet');
-
-                    $need_big_pallet_by_volume = $this->calc_pallets_by_volume($big_pallet_products, 'big_pallet');
-
-                    $need_big_pallets = max($need_big_pallet_by_weight['num'], $need_big_pallet_by_volume['num']);
-
-                    // How much big pallets we need
-                    $order_shipping_content['big_pallet'] = $need_big_pallets;
-
-                    $other_products_weight = $this->calc_products_weight($small_pallet_products) + $this->calc_products_weight($courier_packet_products);
-
-                    $other_products_volume = $this->calc_products_volume($small_pallet_products) + $this->calc_products_volume($courier_packet_products);
-
-                    $left_weight_in_big_pallet = $need_big_pallet_by_weight['left'];
-
-                    $left_volume_in_big_pallet = $need_big_pallet_by_volume['left'];
-
-                    $left_small_pallets_items = array();
-                    $lefr_courier_items = array();
-                    // if we need more
-                    if ($left_weight_in_big_pallet < $other_products_weight  ||  $left_volume_in_big_pallet < $other_products_volume) {
-                      // We can't put all products on the big pallet
-
-                      $small_pallet_products_items = $this->create_items_array($small_pallet_products);
-                      $small_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($small_pallet_products_items);
-
-                      $put_big_pallet_response_sp = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
-
-                      $left_small_pallets_items = $put_big_pallet_response_sp['not_in_pack_items_array'];
-
-                      if ($put_big_pallet_response_sp['weight_left'] > 0 && $put_big_pallet_response_sp['volume_left'] > 0) {
-                        //if we have space - try put courier products
-                        $courier_products_items = $this->create_items_array($courier_packet_products);
-                        $courier_items_sort_more_volume = $this->sort_products_put_more_volume($courier_products_items);
-
-                        $put_big_pallet_response_cp = put_products_in_volume_and_weight($courier_items_sort_more_volume, $put_big_pallet_response_sp['weight_left'], $put_big_pallet_response_sp['volume_left']);
-
-                        $lefr_courier_items = $put_big_pallet_response_cp['not_in_pack_items_array'];
-
-                      }
-
-                    }
-
-                    //нужно собрать в массивы оставшиеся товары и передать на следующий шаг
-
-                    //если всё не влазит на большие палеты - нужно высчитать отделить товары (с максимальным объемом) которые туда влезут, а остальные отправить на упаковку на следующий этап
-
-
-
-
-
-
-                  }
-                  //теперь нужно написать функции укладки в маленькие палеты и укладки в курьерские коробки
-
-
-
-
-
-                  $total_weight = 0;
-                  $cost = 0;
-                  $max_legth = 0;
-                  foreach ( $package['contents'] as $item_id => $values )
-                  {
-                    $_product = $values['data'];
-                    $total_weight = $total_weight + $_product->get_weight() * $values['quantity'];
-                    //$max_legth = ($_product->get_length() > $max_legth) ? $_product->get_length();
-
-
-                  }
-
-                  //Need check free shipping category
-                  //$_product->get_category_ids();
-
-
+                  //total we need
+                  $order_shipping_content = array(
+                    'big_pallet' => $need_big_pallet,
+                    'small_pallet' => $need_small_pallet,
+                    'courier' => $need_courier_pack
+                  );
+                  $total_shipping_price = $need_big_pallet * $this->shipping_variant['big_pallet']['price'] + $need_small_pallet * $this->shipping_variant['small_pallet']['price'] + $need_courier_pack * $this->shipping_variant['courier']['price'];
 
                 }
 ///////////////////////////////////////////////////////
