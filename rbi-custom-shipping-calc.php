@@ -202,17 +202,25 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                   $need_small_pallet = 0;
                   $need_courier_pack = 0;
 
-                  $left_weight_in_big_pallet = $this->shipping_variant['big_pallet']['max_weight'];
-                  $left_volume_in_big_pallet = ($this->shipping_variant['big_pallet']['max_width']/1000) * ($this->shipping_variant['big_pallet']['max_height']/1000) * ($this->shipping_variant['big_pallet']['max_length']/1000);
+                  $left_weight_in_big_pallet_start = $this->shipping_variant['big_pallet']['max_weight'];
+                  $left_volume_in_big_pallet_start = ($this->shipping_variant['big_pallet']['max_width']/1000) * ($this->shipping_variant['big_pallet']['max_height']/1000) * ($this->shipping_variant['big_pallet']['max_length']/1000);
 
-                  $left_weight_in_small_pallet = $this->shipping_variant['small_pallet']['max_weight'];
-                  $left_volume_in_small_pallet = ($this->shipping_variant['small_pallet']['max_width']/1000) * ($this->shipping_variant['small_pallet']['max_height']/1000) * ($this->shipping_variant['small_pallet']['max_length']/1000);
+                  $left_weight_in_small_pallet_start = $this->shipping_variant['small_pallet']['max_weight'];
+                  $left_volume_in_small_pallet_start = ($this->shipping_variant['small_pallet']['max_width']/1000) * ($this->shipping_variant['small_pallet']['max_height']/1000) * ($this->shipping_variant['small_pallet']['max_length']/1000);
 
                   $left_weight_in_courier_pack = $this->shipping_variant['courier']['max_weight'];
                   $left_volume_in_courier_pack = ($this->shipping_variant['courier']['max_width']/1000) * ($this->shipping_variant['courier']['max_height']/1000) * ($this->shipping_variant['courier']['max_length']/1000);
 
                   while ($total_items_left > 0) {
+
+                    $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
+                    $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
+
+                    $left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
+                    $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
+
                     if (count($big_pallet_items)>0){
+                      //if we have big pallet products - put it at big pallet
                       $big_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($big_pallet_items);
                       $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($big_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
 
@@ -221,6 +229,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       $left_volume_in_big_pallet = $put_in_big_pallet_response['volume_left'];
 
                       if (count($put_in_big_pallet_response['in_pack_items_array']) > 0) $need_big_pallet++;
+                      //if we put some products at tha big pallet increase it
 
                     }
                     else {
@@ -241,15 +250,11 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                         $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
 
                         $small_pallet_items = $put_in_small_pallet_response['not_in_pack_items_array'];
-                        $left_weight_in_big_pallet = $put_in_small_pallet_response['weight_left'];
-                        $left_volume_in_big_pallet = $put_in_small_pallet_response['volume_left'];
+                        $left_weight_in_small_pallet = $put_in_small_pallet_response['weight_left'];
+                        $left_volume_in_small_pallet = $put_in_small_pallet_response['volume_left'];
 
                         if (count($put_in_small_pallet_response['in_pack_items_array']) > 0) $need_small_pallet++;
                       }
-
-
-
-
 
                     }
                     else {
@@ -257,7 +262,37 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
                       $left_volume_in_small_pallet = 0;
                     }
 
+                    if (count($courier_packet_items) > 0) {
 
+                      // put courier items to big pallet free space
+                      $courier_packet_items_sort_more_volume = $this->sort_products_put_more_volume($courier_packet_items);
+                      $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+
+                      $courier_packet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
+                      //$left_weight_in_big_pallet = $put_in_small_pallet_response['weight_left'];
+                      //$left_volume_in_big_pallet = $put_in_small_pallet_response['volume_left'];
+
+                      if (count($courier_packet_items) > 0) {
+                        // put courier items to small pallet free space
+                        $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
+                        $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
+
+                        $courier_packet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
+
+                        if (count($courier_packet_items) > 0) {
+                          //$courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
+                          $put_in_courier_packet_response = $this->put_products_in_volume_and_weight($courier_packet_items, $left_weight_in_courier_pack, $left_volume_in_courier_pack);
+
+                          $courier_packet_items = $put_in_courier_packet_response['not_in_pack_items_array'];
+
+                          if (count($put_in_courier_packet_response['in_pack_items_array']) > 0) $need_courier_pack++;
+                        }
+                      }
+
+                    }
+                    else {
+                      // code...
+                    }
 
 
                   }
