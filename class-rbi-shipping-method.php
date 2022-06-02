@@ -6,46 +6,71 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
      * @access public
      * @return void
      */
-    public function __construct() {
+    public function __construct( ) {
         $this->id                 = 'rbi_shipping';
+        /*$this->instance_id           = absint( $instance_id );*/
         $this->method_title       = __( 'Combined Shipping', 'rbi_shipping' );
         $this->method_description = __( 'Custom Shipping Method for RBI', 'rbi_shipping' );
-
-        $this->availability = 'including';
+        /*$this->supports              = array(
+    			'shipping-zones',
+    			'instance-settings',
+    		);*/
+        /*$this->availability = 'including';
         $this->countries = array(
           'PL', // Poland
           'Poland',
-        );
+          'UA',
+          'Ukraine',
+        );*/
 
         $this->init();
 
         $this->enabled = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'yes';
         $this->title = isset( $this->settings['title'] ) ? $this->settings['title'] : __( 'Combined Shipping', 'rbi_shipping' );
 
+        // Save settings in admin if you have any defined
+        //add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
+
         //START Price Settings
-        $this->courier_price = isset( $this->settings['rbi_courier_price'] ) ? $this->settings['rbi_courier_price'] : 0;
-        $this->small_pallet_price = isset( $this->settings['rbi_small_pallet_price'] ) ? $this->settings['rbi_small_pallet_price'] : 0;
-        $this->big_pallet_price = isset( $this->settings['rbi_big_pallet_price'] ) ? $this->settings['rbi_big_pallet_price'] : 0;
+        $this->courier_price = ( null !== get_option('rbi_courier_price') ) ? get_option('rbi_courier_price') : 0;
+        $this->small_pallet_price = ( null !== get_option('rbi_small_pallet_price') ) ? get_option('rbi_small_pallet_price') : 0;
+        $this->big_pallet_price = ( null !== get_option('rbi_big_pallet_price') ) ? get_option('rbi_big_pallet_price') : 0;
         //END Price Settings
 
         //START Weight Settings
-        $this->courier_max_weight = isset( $this->settings['rbi_courier_packet_max_weight'] ) ? $this->settings['rbi_courier_packet_max_weight'] : 0;
+        /*$this->courier_max_weight = isset( $this->settings['rbi_courier_packet_max_weight'] ) ? $this->settings['rbi_courier_packet_max_weight'] : 0;
         $this->small_pallet_max_weight = isset( $this->settings['rbi_small_pallet_max_weight'] ) ? $this->settings['rbi_small_pallet_max_weight'] : 0;
         $this->big_pallet_max_weight = isset( $this->settings['rbi_big_pallet_max_weight'] ) ? $this->settings['rbi_big_pallet_max_weight'] : 0;
+        */
+        $this->courier_max_weight = ( null !== get_option('rbi_courier_packet_max_weight') ) ? get_option('rbi_courier_packet_max_weight') : 0;
+        $this->small_pallet_max_weight = (null !== get_option('rbi_small_pallet_max_weight') ) ? get_option('rbi_small_pallet_max_weight') : 0;
+        $this->big_pallet_max_weight = ( null !== get_option('rbi_big_pallet_max_weight') ) ? get_option('rbi_big_pallet_max_weight') : 0;
         //END Weight Settings
 
         //START Size Settings
-        $this->courier_max_width = isset( $this->settings['rbi_courier_packet_max_width'] ) ? $this->settings['rbi_courier_packet_max_width'] : 0;
+        /*$this->courier_max_width = isset( $this->settings['rbi_courier_packet_max_width'] ) ? $this->settings['rbi_courier_packet_max_width'] : 0;
         $this->courier_max_height = isset( $this->settings['rbi_courier_packet_max_height'] ) ? $this->settings['rbi_courier_packet_max_height'] : 0;
         $this->courier_max_length = isset( $this->settings['rbi_courier_packet_max_length'] ) ? $this->settings['rbi_courier_packet_max_length'] : 0;
+        */
+        $this->courier_max_width = ( null !== get_option('rbi_courier_packet_max_width') ) ? $this->settings['rbi_courier_packet_max_width'] : 0;
+        $this->courier_max_height = ( null !== get_option('rbi_courier_packet_max_height') ) ? $this->settings['rbi_courier_packet_max_height'] : 0;
+        $this->courier_max_length = ( null !== get_option('rbi_courier_packet_max_length') ) ? $this->settings['rbi_courier_packet_max_length'] : 0
 
-        $this->small_pallet_max_width = isset( $this->settings['rbi_small_pallet_max_width'] ) ? $this->settings['rbi_small_pallet_max_width'] : 0;
+        /*$this->small_pallet_max_width = isset( $this->settings['rbi_small_pallet_max_width'] ) ? $this->settings['rbi_small_pallet_max_width'] : 0;
         $this->small_pallet_max_height = isset( $this->settings['rbi_small_pallet_max_height'] ) ? $this->settings['rbi_small_pallet_max_height'] : 0;
-        $this->small_pallet_max_length = isset( $this->settings['rbi_small_pallet_max_length'] ) ? $this->settings['rbi_small_pallet_max_length'] : 0;
+        $this->small_pallet_max_length = isset( $this->settings['rbi_small_pallet_max_length'] ) ? $this->settings['rbi_small_pallet_max_length'] : 0;*/
 
-        $this->big_pallet_max_width = isset( $this->settings['rbi_big_pallet_max_width'] ) ? $this->settings['rbi_big_pallet_max_width'] : 0;
+        $this->small_pallet_max_width = ( null !== get_option('rbi_small_pallet_max_width') ) ? $this->settings['rbi_small_pallet_max_width'] : 0;
+        $this->small_pallet_max_height = ( null !== get_option('rbi_small_pallet_max_height') ) ? $this->settings['rbi_small_pallet_max_height'] : 0;
+        $this->small_pallet_max_length = ( null !== get_option('rbi_small_pallet_max_length') ) ? $this->settings['rbi_small_pallet_max_length'] : 0;
+
+        /*$this->big_pallet_max_width = isset( $this->settings['rbi_big_pallet_max_width'] ) ? $this->settings['rbi_big_pallet_max_width'] : 0;
         $this->big_pallet_max_height = isset( $this->settings['rbi_big_pallet_max_height'] ) ? $this->settings['rbi_big_pallet_max_height'] : 0;
-        $this->big_pallet_max_length = isset( $this->settings['rbi_big_pallet_max_length'] ) ? $this->settings['rbi_big_pallet_max_length'] : 0;
+        $this->big_pallet_max_length = isset( $this->settings['rbi_big_pallet_max_length'] ) ? $this->settings['rbi_big_pallet_max_length'] : 0;*/
+
+        $this->big_pallet_max_width = ( null !== get_option('rbi_big_pallet_max_width') ) ? $this->settings['rbi_big_pallet_max_width'] : 0;
+        $this->big_pallet_max_height = ( null !== get_option('rbi_big_pallet_max_height') ) ? $this->settings['rbi_big_pallet_max_height'] : 0;
+        $this->big_pallet_max_length = ( null !== get_option('rbi_big_pallet_max_length') ) ? $this->settings['rbi_big_pallet_max_length'] : 0;
         //END Size Settings
 
         //Create Shipping Variants array
@@ -116,12 +141,12 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           'default' => 2000
         ),
 
-        'free_delivery_category' => array(
+        /*'free_delivery_category' => array(
           'title' => __( 'Free delivery category ID', 'rbi_shipping' ),
           'type' => 'number',
           'description' => __( 'Free delivery category ID', 'rbi_shipping' ),
           'default' => 0
-        )
+        )*/
       );
 
     }
@@ -133,30 +158,38 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
      * @param mixed $package
      * @return void
      */
-    public function calculate_shipping( $package ) {
+
+    public function calculate_shipping22($package = array()) {
+      $rate = array(
+          //'id' => $this->id,
+          'label' => $this->title,
+          'cost' => '10',//$total_shipping_price
+          'taxes' => 'false',
+      );
+
+      $this->add_rate( $rate );
+    }
+    public function calculate_shipping($package = array()) {
+
+      $flogs=fopen('/domains/podlogidrzwi.runbyit.com/public_html/wp-content/plugins/rbi-custom-shipping-calc/logs.txt',"a");	// Файл логов
+	     fwrite($flogs,date("d-m-Y H:i:s")." Shipping calc start \n");
 
       $order_shipping_content = array(
         'big_pallet' => 0,
         'small_pallet' => 0,
         'courier' => 0
       );
-      //How we can get category IDs by shipping type??????
-      /*$category_id_can_be_shipped = array(
-        'courier' => array(1,2,3),
-        'small_pallet' => array(4,5,6),
-        'big_pallet' => array(7,8,9)
-      );*/
 
       //Prepare arrays for pruducts by category
       $courier_packet_products = array();
       $small_pallet_products = array();
       $big_pallet_products = array();
-
+      echo 'separate products by category of shipping';
       //separate products by category of shipping
       foreach ( $package['contents'] as  $values ) {
         $one_product = $values['data'];
         //$one_product_categories =  $one_product->get_category_ids();
-        $product_max_size = product_max_size($one_product);
+        $product_max_size = $this->product_max_size($one_product);
         if ($product_max_size > $this->small_pallet_max_length) {
           //need big pallet
           $big_pallet_products[] = $values;
@@ -171,11 +204,13 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         }
       }
 
+      echo 'create items array';
       //create item array
       $big_pallet_items = $this->create_items_array($big_pallet_products);
       $small_pallet_items = $this->create_items_array($small_pallet_products);
       $courier_packet_items = $this->create_items_array($courier_packet_products);
-
+      echo 'items array created';
+/*
       $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
 
       $need_big_pallet = 0;
@@ -281,7 +316,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
         $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
       }
-
+*/
       //total we need
       $order_shipping_content = array(
         'big_pallet' => $need_big_pallet,
@@ -289,11 +324,18 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         'courier' => $need_courier_pack
       );
       $total_shipping_price = $need_big_pallet * $this->shipping_variant['big_pallet']['price'] + $need_small_pallet * $this->shipping_variant['small_pallet']['price'] + $need_courier_pack * $this->shipping_variant['courier']['price'];
-
-      $rate = array(
+      $total_shipping_price = $this->shipping_variant['small_pallet']['price'];
+      /*$rate = array(
           'id' => $this->id,
           'label' => $this->title,
-          'cost' => $total_shipping_price
+          'cost' => 10//$total_shipping_price
+      );*/
+
+      $rate = array(
+          //'id' => $this->id,
+          'label' => $this->title.'13'.$this->shipping_variant['small_pallet']['price'].'_',
+          'cost' => $total_shipping_price,//$total_shipping_price
+          'taxes' => 'false',
       );
 
       $this->add_rate( $rate );

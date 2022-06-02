@@ -30,13 +30,11 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
 
     add_action( 'woocommerce_shipping_init', 'rbi_custom_shipping_method' );
 
-
+    add_filter( 'woocommerce_shipping_methods', 'add_rbi_shipping_method' );
     function add_rbi_shipping_method( $methods ) {
-        $methods[] = 'RBI_Shipping_Method';
+        $methods['rbi_shipping'] = 'RBI_Shipping_Method';
         return $methods;
     }
-
-    add_filter( 'woocommerce_shipping_methods', 'add_rbi_shipping_method' );
 
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     //++++++++++++++
@@ -98,15 +96,10 @@ function rbi_shipping_settings_callback(){
   echo '<div class="wrap">
 	<h1>' . get_admin_page_title() . '</h1>
 	<form method="post" action="options.php">';
-    submit_button();
-		settings_fields( 'rbi_shipping_settings' ); // название настроек
-		do_settings_sections( 'rbi_shipping_settings_page' ); // ярлык страницы, не более
-		submit_button(); // функция для вывода кнопки сохранения
-
-  //echo '<h1>' . get_admin_page_title() . ' - '.__('Advanced Settings', 'rbi_shipping').'</h1>';
-    //settings_fields( 'rbi_advanced_shipping_settings' ); // название настроек
-    //do_settings_sections( 'rbi_shipping_settings_page' ); // ярлык страницы, не более
-    //submit_button(); // функция для вывода кнопки сохранения
+    submit_button(); // submit button show
+		settings_fields( 'rbi_shipping_settings' ); // settings name
+		do_settings_sections( 'rbi_shipping_settings_page' ); // page slug
+		submit_button(); // submit button show
 
   echo '</form></div>';
 }
@@ -115,105 +108,105 @@ add_action( 'admin_init',  'rbi_shipping_fields' );
 
 function rbi_shipping_fields(){
 
-	// регистрируем опцию
+	// options register
 	register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_courier_price', // ярлык опции
+		'rbi_shipping_settings', // setting name from prev step
+		'rbi_courier_price', // option slug
+		'floatval' // clean function
+	);
+
+  register_setting(
+		'rbi_shipping_settings', // setting name from prev step
+		'rbi_small_pallet_price', // option slug
 		'floatval' // функция очистки
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_small_pallet_price', // ярлык опции
-		'floatval' // функция очистки
-	);
-
-  register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_big_pallet_price', // ярлык опции
-		'floatval' // функция очистки
+		'rbi_shipping_settings', // setting name from prev step
+		'rbi_big_pallet_price', // option slug
+		'floatval' // clean function
 	);
 
 	// добавляем секцию без заголовка
 	add_settings_section(
-		'rbi_shipping_settings_section_id', // ID секции, пригодится ниже
-		__('Basic Shipping Settings', 'rbi_shipping'), // заголовок (не обязательно)
-		'', // функция для вывода HTML секции (необязательно)
-		'rbi_shipping_settings_page' // ярлык страницы
+		'rbi_shipping_settings_section_id', // Section ID we will need it on next step
+		__('Basic Shipping Settings', 'rbi_shipping'), // Title
+		'', //
+		'rbi_shipping_settings_page' // page slug
 	);
 // END Basic Settings
 
 //START  Advanced Settings
   register_setting(
 		'rbi_shipping_settings', // settings name from prev step
-		'rbi_courier_packet_max_weight', // option lable
+		'rbi_courier_packet_max_weight', // option slug
 		'absint' // Clean function
 	);
 
   register_setting(
     'rbi_shipping_settings', // settings name from prev step
-    'rbi_courier_packet_max_width', // option lable
+    'rbi_courier_packet_max_width', // option slug
     'absint' // Clean function
   );
 
   register_setting(
     'rbi_shipping_settings', // settings name from prev step
-    'rbi_courier_packet_max_height', // option lable
+    'rbi_courier_packet_max_height', // option slug
     'absint' // Clean function
   );
 
   register_setting(
     'rbi_shipping_settings', // settings name from prev step
-    'rbi_courier_packet_max_length', // option lable
+    'rbi_courier_packet_max_length', // option slug
     'absint' // Clean function
   );
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_small_pallet_max_weight', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_small_pallet_max_weight', // option slug
+		'absint' // Clean function
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_small_pallet_max_width', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_small_pallet_max_width', // option slug
+		'absint' // Clean function
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_small_pallet_max_height', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_small_pallet_max_height', // option slug
+		'absint' // Clean function
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_small_pallet_max_length', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_small_pallet_max_length', // option slug
+		'absint' // Clean function
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_big_pallet_max_weight', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_big_pallet_max_weight', // option slug
+		'absint' // Clean function
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_big_pallet_max_width', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_big_pallet_max_width', // option slug
+		'absint' // Clean function
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_big_pallet_max_height', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_big_pallet_max_height', // option slug
+		'absint' // Clean function
 	);
 
   register_setting(
-		'rbi_shipping_settings', // название настроек из предыдущего шага
-		'rbi_big_pallet_max_length', // ярлык опции
-		'absint' // функция очистки
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_big_pallet_max_length', // option slug
+		'absint' // Clean function
 	);
 
   add_settings_section(
