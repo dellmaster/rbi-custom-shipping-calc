@@ -52,26 +52,31 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         $this->courier_max_height = isset( $this->settings['rbi_courier_packet_max_height'] ) ? $this->settings['rbi_courier_packet_max_height'] : 0;
         $this->courier_max_length = isset( $this->settings['rbi_courier_packet_max_length'] ) ? $this->settings['rbi_courier_packet_max_length'] : 0;
         */
-        $this->courier_max_width = ( null !== get_option('rbi_courier_packet_max_width') ) ? $this->settings['rbi_courier_packet_max_width'] : 0;
-        $this->courier_max_height = ( null !== get_option('rbi_courier_packet_max_height') ) ? $this->settings['rbi_courier_packet_max_height'] : 0;
-        $this->courier_max_length = ( null !== get_option('rbi_courier_packet_max_length') ) ? $this->settings['rbi_courier_packet_max_length'] : 0
+        $this->courier_max_width = ( null !== get_option('rbi_courier_packet_max_width') ) ? get_option('rbi_courier_packet_max_width') : 0;
+        $this->courier_max_height = ( null !== get_option('rbi_courier_packet_max_height') ) ? get_option('rbi_courier_packet_max_height') : 0;
+        $this->courier_max_length = ( null !== get_option('rbi_courier_packet_max_length') ) ? get_option('rbi_courier_packet_max_length') : 0;
 
         /*$this->small_pallet_max_width = isset( $this->settings['rbi_small_pallet_max_width'] ) ? $this->settings['rbi_small_pallet_max_width'] : 0;
         $this->small_pallet_max_height = isset( $this->settings['rbi_small_pallet_max_height'] ) ? $this->settings['rbi_small_pallet_max_height'] : 0;
         $this->small_pallet_max_length = isset( $this->settings['rbi_small_pallet_max_length'] ) ? $this->settings['rbi_small_pallet_max_length'] : 0;*/
 
-        $this->small_pallet_max_width = ( null !== get_option('rbi_small_pallet_max_width') ) ? $this->settings['rbi_small_pallet_max_width'] : 0;
-        $this->small_pallet_max_height = ( null !== get_option('rbi_small_pallet_max_height') ) ? $this->settings['rbi_small_pallet_max_height'] : 0;
-        $this->small_pallet_max_length = ( null !== get_option('rbi_small_pallet_max_length') ) ? $this->settings['rbi_small_pallet_max_length'] : 0;
+        $this->small_pallet_max_width = ( null !== get_option('rbi_small_pallet_max_width') ) ? get_option('rbi_small_pallet_max_width') : 0;
+        $this->small_pallet_max_height = ( null !== get_option('rbi_small_pallet_max_height') ) ? get_option('rbi_small_pallet_max_height') : 0;
+        $this->small_pallet_max_length = ( null !== get_option('rbi_small_pallet_max_length') ) ? get_option('rbi_small_pallet_max_length') : 0;
 
         /*$this->big_pallet_max_width = isset( $this->settings['rbi_big_pallet_max_width'] ) ? $this->settings['rbi_big_pallet_max_width'] : 0;
         $this->big_pallet_max_height = isset( $this->settings['rbi_big_pallet_max_height'] ) ? $this->settings['rbi_big_pallet_max_height'] : 0;
         $this->big_pallet_max_length = isset( $this->settings['rbi_big_pallet_max_length'] ) ? $this->settings['rbi_big_pallet_max_length'] : 0;*/
 
-        $this->big_pallet_max_width = ( null !== get_option('rbi_big_pallet_max_width') ) ? $this->settings['rbi_big_pallet_max_width'] : 0;
-        $this->big_pallet_max_height = ( null !== get_option('rbi_big_pallet_max_height') ) ? $this->settings['rbi_big_pallet_max_height'] : 0;
-        $this->big_pallet_max_length = ( null !== get_option('rbi_big_pallet_max_length') ) ? $this->settings['rbi_big_pallet_max_length'] : 0;
+        $this->big_pallet_max_width = ( null !== get_option('rbi_big_pallet_max_width') ) ? get_option('rbi_big_pallet_max_width') : 0;
+        $this->big_pallet_max_height = ( null !== get_option('rbi_big_pallet_max_height') ) ? get_option('rbi_big_pallet_max_height') : 0;
+        $this->big_pallet_max_length = ( null !== get_option('rbi_big_pallet_max_length') ) ? get_option('rbi_big_pallet_max_length') : 0;
         //END Size Settings
+
+        //START Free Shipping
+          $this->free_cat_id = ( null !== get_option('rbi_free_cat_id') ) ? get_option('rbi_free_cat_id') : 0;
+          $this->free_min_sum = ( null !== get_option('rbi_free_min_sum') ) ? get_option('rbi_free_min_sum') : 0;
+        //END Free Shipping
 
         //Create Shipping Variants array
         $this->shipping_variant = array(
@@ -134,12 +139,12 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           'default' => __( 'RBI Calc Shipping', 'rbi_shipping' )
         ),
 
-        'free_delivery_min_sum' => array(
+        /*'free_delivery_min_sum' => array(
           'title' => __( 'Free delivery minimal Sum', 'rbi_shipping' ),
           'type' => 'number',
           'description' => __( 'Minimal sum of 1 product from Free Shipping category', 'rbi_shipping' ),
           'default' => 2000
-        ),
+        ),*/
 
         /*'free_delivery_category' => array(
           'title' => __( 'Free delivery category ID', 'rbi_shipping' ),
@@ -170,8 +175,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $this->add_rate( $rate );
     }
     public function calculate_shipping($package = array()) {
-
-      $flogs=fopen('/domains/podlogidrzwi.runbyit.com/public_html/wp-content/plugins/rbi-custom-shipping-calc/logs.txt',"a");	// Файл логов
+      $debug_mess = '|';
+      $flogs=fopen('logs2.txt',"w+");	// logs file  /domains/podlogidrzwi.runbyit.com/public_html/wp-content/plugins/rbi-custom-shipping-calc/
 	     fwrite($flogs,date("d-m-Y H:i:s")." Shipping calc start \n");
 
       $order_shipping_content = array(
@@ -179,17 +184,21 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         'small_pallet' => 0,
         'courier' => 0
       );
-
+      //$debug_mess .= '|all-'.count($package['contents']);;
       //Prepare arrays for pruducts by category
       $courier_packet_products = array();
       $small_pallet_products = array();
       $big_pallet_products = array();
-      echo 'separate products by category of shipping';
+      //fwrite($flogs,date("d-m-Y H:i:s").print_r( $package['contents'], true)."  \n");
       //separate products by category of shipping
       foreach ( $package['contents'] as  $values ) {
         $one_product = $values['data'];
+        //fwrite($flogs,date("d-m-Y H:i:s").print_r( $one_product, true)."  \n");
+        fwrite($flogs,date("d-m-Y H:i:s").'Height-'.print_r( $one_product->get_height(), true)."  \n");
         //$one_product_categories =  $one_product->get_category_ids();
-        $product_max_size = $this->product_max_size($one_product);
+        $product_max_size = 10*$this->product_max_size($one_product);
+        fwrite($flogs,date("d-m-Y H:i:s").'product_max_size-'.print_r( $product_max_size, true)."  \n");
+        //$debug_mess .= '|'.$product_max_size;
         if ($product_max_size > $this->small_pallet_max_length) {
           //need big pallet
           $big_pallet_products[] = $values;
@@ -203,14 +212,17 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $courier_packet_products[] = $values;
         }
       }
+      //$debug_mess .= '<br />'.'big pr-'.count($big_pallet_products);
+      //$debug_mess .= '<br />'.'small pr-'.count($small_pallet_products);
+      //$debug_mess .= '<br />'.'courier pr-'.count($courier_packet_products);
 
-      echo 'create items array';
+      //$debug_mess .= '/n'.'create items array';
       //create item array
       $big_pallet_items = $this->create_items_array($big_pallet_products);
       $small_pallet_items = $this->create_items_array($small_pallet_products);
       $courier_packet_items = $this->create_items_array($courier_packet_products);
-      echo 'items array created';
-/*
+      //$debug_mess .= '/n'.'items array created';
+
       $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
 
       $need_big_pallet = 0;
@@ -227,7 +239,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $left_volume_in_courier_pack = ($this->shipping_variant['courier']['max_width']/1000) * ($this->shipping_variant['courier']['max_height']/1000) * ($this->shipping_variant['courier']['max_length']/1000);
 
       while ($total_items_left > 0) {
-
+        //$debug_mess .= '/n'.'items left';
         $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
         $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
 
@@ -235,6 +247,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
 
         if (count($big_pallet_items)>0){
+          //$debug_mess .= '/n'.'big items';
           //if we have big pallet items - put it at big pallet
           $big_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($big_pallet_items);
           $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($big_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
@@ -245,7 +258,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
           if (count($put_in_big_pallet_response['in_pack_items_array']) > 0) $need_big_pallet++;
           //if we put some products at the big pallet increase it
-
+          fwrite($flogs,date("d-m-Y H:i:s").'need_big_pallet-'.print_r( $need_big_pallet, true)."  \n");
         }
         else {
           //if we dont use big pallet - we dont have space on it
@@ -274,7 +287,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
             if (count($put_in_small_pallet_response['in_pack_items_array']) > 0) $need_small_pallet++;
             //if we put some products to small pallet - increase it
           }
-
+          fwrite($flogs,date("d-m-Y H:i:s").'need_small_pallet-'.print_r( $need_small_pallet, true)."  \n");
         }
         else {
           //if we dont use small pallet - we dont have space on it
@@ -308,7 +321,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
               if (count($put_in_courier_packet_response['in_pack_items_array']) > 0) $need_courier_pack++;
             }
           }
-
+          fwrite($flogs,date("d-m-Y H:i:s").'need_courier_pack-'.print_r( $need_courier_pack, true)."  \n");
         }
         else {
           // code...
@@ -316,7 +329,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
         $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
       }
-*/
+
       //total we need
       $order_shipping_content = array(
         'big_pallet' => $need_big_pallet,
@@ -324,7 +337,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         'courier' => $need_courier_pack
       );
       $total_shipping_price = $need_big_pallet * $this->shipping_variant['big_pallet']['price'] + $need_small_pallet * $this->shipping_variant['small_pallet']['price'] + $need_courier_pack * $this->shipping_variant['courier']['price'];
-      $total_shipping_price = $this->shipping_variant['small_pallet']['price'];
+      //$total_shipping_price = $this->shipping_variant['small_pallet']['price'];
       /*$rate = array(
           'id' => $this->id,
           'label' => $this->title,
@@ -333,7 +346,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       $rate = array(
           //'id' => $this->id,
-          'label' => $this->title.'13'.$this->shipping_variant['small_pallet']['price'].'_',
+          'label' => $debug_mess,//$this->title.'13'.$this->shipping_variant['small_pallet']['price'].'_',
           'cost' => $total_shipping_price,//$total_shipping_price
           'taxes' => 'false',
       );
@@ -613,7 +626,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
     // "rotate" the product and find it max size.
     public function product_max_size($one_product) {
-      max($one_product->get_length(), $one_product->get_width(), $one_product->get_height());
+      return max((float)$one_product->get_length(), (float)$one_product->get_width(), (float)$one_product->get_height());
     }
 
     public function pack_max_volume($pack_type) {

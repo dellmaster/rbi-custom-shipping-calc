@@ -209,32 +209,45 @@ function rbi_shipping_fields(){
 		'absint' // Clean function
 	);
 
-  add_settings_section(
-		'rbi_shipping_advanced_courier_settings_section_id', // ID секции, пригодится ниже
-		__('Advanced Courier Shipping Settings', 'rbi_shipping'), // заголовок (не обязательно)
-		'', // функция для вывода HTML секции (необязательно)
-		'rbi_shipping_settings_page' // ярлык страницы
+  //Free Shipping settings
+  register_setting(
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_free_cat_id', // option slug
+		'absint' // Clean function
+	);
+
+  register_setting(
+		'rbi_shipping_settings', // settings name from prev step
+		'rbi_free_min_sum', // option slug
+		'absint' // Clean function
 	);
 
   add_settings_section(
-		'rbi_shipping_advanced_small_pallet_settings_section_id', // ID секции, пригодится ниже
-		__('Advanced Small Pallet Shipping Settings', 'rbi_shipping'), // заголовок (не обязательно)
-		'', // функция для вывода HTML секции (необязательно)
-		'rbi_shipping_settings_page' // ярлык страницы
+		'rbi_shipping_advanced_courier_settings_section_id', // Section ID we will need it on next step
+		__('Advanced Courier Shipping Settings', 'rbi_shipping'), // Title
+		'', //
+		'rbi_shipping_settings_page' // page slug
 	);
 
   add_settings_section(
-    'rbi_shipping_advanced_big_pallet_settings_section_id', // ID секции, пригодится ниже
-    __('Advanced Big Pallet Shipping Settings', 'rbi_shipping'), // заголовок (не обязательно)
-    '', // функция для вывода HTML секции (необязательно)
-    'rbi_shipping_settings_page' // ярлык страницы
+		'rbi_shipping_advanced_small_pallet_settings_section_id', // Section ID we will need it on next step
+		__('Advanced Small Pallet Shipping Settings', 'rbi_shipping'), // Title
+		'', //
+		'rbi_shipping_settings_page' // page slug
+	);
+
+  add_settings_section(
+    'rbi_shipping_advanced_big_pallet_settings_section_id', // Section ID we will need it on next step
+    __('Advanced Big Pallet Shipping Settings', 'rbi_shipping'), // Title
+    '', //
+    'rbi_shipping_settings_page' // page slug
   );
 
   add_settings_section(
-    'rbi_shipping_advanced_free_category_settings_section_id', // ID секции, пригодится ниже
-    __('Free Shipping category settings', 'rbi_shipping'), // заголовок (не обязательно)
-    '', // функция для вывода HTML секции (необязательно)
-    'rbi_shipping_settings_page' // ярлык страницы
+    'rbi_shipping_advanced_free_category_settings_section_id', // Section ID we will need it on next step
+    __('Free Shipping category settings', 'rbi_shipping'), // Title
+    '', //
+    'rbi_shipping_settings_page' // page slug
   );
 //END  Advanced Settings
 
@@ -247,7 +260,7 @@ function rbi_shipping_fields(){
 		'rbi_shipping_settings_section_id', // section ID
 		array(
 			'label_for' => 'rbi_courier_price',
-			'class' => 'misha-class', // for <tr>
+			'class' => 'rbisc-tr-class', // for <tr>
 			'name' => 'rbi_courier_price', // callback function params
 		)
 	);
@@ -260,7 +273,7 @@ function rbi_shipping_fields(){
     'rbi_shipping_settings_section_id', // // ID секции, куда добавляем опцию
     array(
       'label_for' => 'rbi_small_pallet_price',
-      'class' => 'misha-class', // для элемента <tr>
+      'class' => 'rbisc-tr-class', // для элемента <tr>
       'name' => 'rbi_small_pallet_price', // любые доп параметры в колбэк функцию
     )
   );
@@ -273,7 +286,7 @@ function rbi_shipping_fields(){
     'rbi_shipping_settings_section_id', // // ID секции, куда добавляем опцию
     array(
       'label_for' => 'rbi_big_pallet_price',
-      'class' => 'misha-class', // для элемента <tr>
+      'class' => 'rbisc-tr-class', // для элемента <tr>
       'name' => 'rbi_big_pallet_price', // любые доп параметры в колбэк функцию
     )
   );
@@ -291,7 +304,7 @@ add_settings_field(
   'rbi_shipping_advanced_courier_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_courier_packet_max_weight',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_courier_packet_max_weight', // callback function params
   )
 );
@@ -304,7 +317,7 @@ add_settings_field(
   'rbi_shipping_advanced_courier_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_courier_packet_max_width',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_courier_packet_max_width', // callback function params
   )
 );
@@ -317,7 +330,7 @@ add_settings_field(
   'rbi_shipping_advanced_courier_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_courier_packet_max_height',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_courier_packet_max_height', // callback function params
   )
 );
@@ -330,7 +343,7 @@ add_settings_field(
   'rbi_shipping_advanced_courier_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_courier_packet_max_length',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_courier_packet_max_length', // callback function params
   )
 );
@@ -345,7 +358,7 @@ add_settings_field(
   'rbi_shipping_advanced_small_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_small_pallet_max_weight',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_small_pallet_max_weight', // callback function params
   )
 );
@@ -358,7 +371,7 @@ add_settings_field(
   'rbi_shipping_advanced_small_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_small_pallet_max_width',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_small_pallet_max_width', // callback function params
   )
 );
@@ -371,7 +384,7 @@ add_settings_field(
   'rbi_shipping_advanced_small_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_small_pallet_max_height',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_small_pallet_max_height', // callback function params
   )
 );
@@ -384,7 +397,7 @@ add_settings_field(
   'rbi_shipping_advanced_small_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_small_pallet_max_length',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_small_pallet_max_length', // callback function params
   )
 );
@@ -399,7 +412,7 @@ add_settings_field(
   'rbi_shipping_advanced_big_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_big_pallet_max_weight',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_big_pallet_max_weight', // callback function params
   )
 );
@@ -411,7 +424,7 @@ add_settings_field(
   'rbi_shipping_advanced_big_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_big_pallet_max_width',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_big_pallet_max_width', // callback function params
   )
 );
@@ -423,7 +436,7 @@ add_settings_field(
   'rbi_shipping_advanced_big_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_big_pallet_max_height',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_big_pallet_max_height', // callback function params
   )
 );
@@ -435,13 +448,13 @@ add_settings_field(
   'rbi_shipping_advanced_big_pallet_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_big_pallet_max_length',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_big_pallet_max_length', // callback function params
   )
 );
 //END Big Pallet Advanced settings
 
-//
+// START Free delivery params
 
 add_settings_field(
   'rbi_free_cat_id',
@@ -451,10 +464,26 @@ add_settings_field(
   'rbi_shipping_advanced_free_category_settings_section_id', // section ID
   array(
     'label_for' => 'rbi_free_cat_id',
-    'class' => 'misha-class', // for <tr>
+    'class' => 'rbisc-tr-class', // for <tr>
     'name' => 'rbi_free_cat_id', // callback function params
   )
 );
+
+add_settings_field(
+  'rbi_free_min_sum',
+  __('Set Free Shipping minimal Sum', 'rbi_shipping'),
+  'rbi_free_sum_field', // display function name
+  'rbi_shipping_settings_page', // page lable
+  'rbi_shipping_advanced_free_category_settings_section_id', // section ID
+  array(
+    'label_for' => 'rbi_free_min_sum',
+    'class' => 'rbisc-tr-class', // for <tr>
+    'name' => 'rbi_free_min_sum', // callback function params
+  )
+);
+
+// END Free delivery params
+
 
   //END fields for Advanced Settings
 
@@ -515,5 +544,17 @@ function rbi_id_field( $args ){
     absint( $value )
   );
 
+}
+
+function rbi_free_sum_field( $args ){
+	// get value from database table options
+	$value = get_option( $args[ 'name' ] );
+
+	printf(
+		'<input type="number" min="0" id="%s" name="%s" value="%d" />',
+		esc_attr( $args[ 'name' ] ),
+		esc_attr( $args[ 'name' ] ),
+		absint( $value )
+	);
 
 }
