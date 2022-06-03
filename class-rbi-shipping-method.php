@@ -164,18 +164,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
      * @return void
      */
 
-    public function calculate_shipping22($package = array()) {
-      $rate = array(
-          //'id' => $this->id,
-          'label' => $this->title,
-          'cost' => '10',//$total_shipping_price
-          'taxes' => 'false',
-      );
-
-      $this->add_rate( $rate );
-    }
     public function calculate_shipping($package = array()) {
-      $debug_mess = '|';
+      //$debug_mess = '|';
       $flogs=fopen('logs2.txt',"w+");	// logs file  /domains/podlogidrzwi.runbyit.com/public_html/wp-content/plugins/rbi-custom-shipping-calc/
 	     fwrite($flogs,date("d-m-Y H:i:s")." Shipping calc start \n");
 
@@ -189,9 +179,29 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $courier_packet_products = array();
       $small_pallet_products = array();
       $big_pallet_products = array();
+      $free_shipping_products = array();
       //fwrite($flogs,date("d-m-Y H:i:s").print_r( $package['contents'], true)."  \n");
       //separate products by category of shipping
+
+      //Check Free shipping
+      $free_cat_id = $this->free_cat_id;
+      fwrite($flogs,date("d-m-Y H:i:s").'catid-'.print_r( $free_cat_id, true)."  \n");
+      $free_sum = 0;
+      $have_free_shipping = false;
+      foreach ( $package['contents'] as $values ) {
+        $one_product = $values['data'];
+        $product_all_categories = $one_product->get_category_ids();
+        fwrite($flogs,date("d-m-Y H:i:s").'cats-'.print_r( $product_all_categories, true)."  \n");
+
+        $free_min_sum = $this->free_min_sum;
+        foreach ($product_all_categories as $value) {
+          if ($value == $free_cat_id) $free_sum += $one_product->get_price() * $values['quantity'];
+        }
+      }
+      if ($free_sum > $free_min_sum) $have_free_shipping = true;
+
       foreach ( $package['contents'] as  $values ) {
+        $free_shipping_product = false;
         $one_product = $values['data'];
         //fwrite($flogs,date("d-m-Y H:i:s").print_r( $one_product, true)."  \n");
         fwrite($flogs,date("d-m-Y H:i:s").'Height-'.print_r( $one_product->get_height(), true)."  \n");
@@ -199,7 +209,15 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         $product_max_size = 10*$this->product_max_size($one_product);
         fwrite($flogs,date("d-m-Y H:i:s").'product_max_size-'.print_r( $product_max_size, true)."  \n");
         //$debug_mess .= '|'.$product_max_size;
-        if ($product_max_size > $this->small_pallet_max_length) {
+        //Check free shipping category
+        $product_all_categories = $one_product->get_category_ids();
+        foreach ($product_all_categories as $category) {
+          if ($category == $free_cat_id) $free_shipping_product = true;
+        }
+        if ($free_shipping_product && $have_free_shipping) {
+          $free_shipping_products = $values;
+        }
+        elseif ($product_max_size > $this->small_pallet_max_length) {
           //need big pallet
           $big_pallet_products[] = $values;
         }
@@ -218,9 +236,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       //$debug_mess .= '/n'.'create items array';
       //create item array
-      $big_pallet_items = $this->create_items_array($big_pallet_products);
-      $small_pallet_items = $this->create_items_array($small_pallet_products);
-      $courier_packet_items = $this->create_items_array($courier_packet_products);
+      $big_pallet_items = $this->products_weight_and_volume_rate($this->create_items_array($big_pallet_products));
+      $small_pallet_items = $this->products_weight_and_volume_rate($this->create_items_array($small_pallet_products));
+      $courier_packet_items = $this->products_weight_and_volume_rate($this->create_items_array($courier_packet_products));
       //$debug_mess .= '/n'.'items array created';
 
       $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
@@ -388,6 +406,90 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       $this->add_rate( $rate );
 
+      function rbi_shipping_description() {
+        global $woocommerce;
+
+        $free_cat_id = ( null !== get_option('rbi_free_cat_id') ) ? get_option('rbi_free_cat_id') : 0;
+
+        $free_sum = 0;
+        $standart_sum = 0;
+
+        $items = $woocommerce->cart->get_cart();
+
+        if (true) {
+        ?>
+
+        <?
+        foreach($items as $item => $values) {
+          $one_product = $values['data'];
+          $free_shipping_product = false;
+          $product_all_categories = $one_product->get_category_ids();
+          foreach ($product_all_categories as $category) {
+            if ($category == $free_cat_id) $free_shipping_product = true;
+          }
+          if ($free_shipping_product) {
+          ?>
+          <tr>
+            <td class="subtotal-products" style="font-weight: 300;">
+              <?echo $one_product->get_name();?>
+            </td>
+            <td class="subtotal-products" style="font-weight: 300;">
+              <?echo wc_price( $values['quantity'] * $one_product->get_price());?>
+            </td>
+          </tr>
+          <?
+            $free_sum += $values['quantity'] * $one_product->get_price();
+          }
+        }
+        ?>
+        <tr class="woocommerce-shipping-totals shipping">
+          <td>
+          <? echo __( 'Free Shipping Products', 'rbi_shipping' );?>
+          </td>
+          <td>
+            <? echo __( 'Subtotal', 'rbi_shipping' ).': '.wc_price($free_sum);?>
+          </td>
+        </tr>
+        <?
+          foreach($items as $item => $values) {
+            $free_shipping_product = false;
+            $one_product = $values['data'];
+            $product_all_categories = $one_product->get_category_ids();
+            foreach ($product_all_categories as $category) {
+              if ($category == $free_cat_id) $free_shipping_product = true;
+            }
+            if ($free_shipping_product != true) {
+            ?>
+            <tr>
+              <td class="subtotal-products" style="font-weight: 300;">
+                <?echo $one_product->get_name();?>
+              </td>
+              <td class="subtotal-products" style="font-weight: 300;">
+                <?echo wc_price( $values['quantity'] * $one_product->get_price());?>
+              </td>
+            </tr>
+            <?
+              $standart_sum += $values['quantity'] * $one_product->get_price();
+            }
+          }
+          ?>
+          <tr>
+            <td>
+              <? echo __( 'Standart Shipping Products', 'rbi_shipping' );?>
+            </td>
+            <td>
+                <? echo __( 'Subtotal', 'rbi_shipping' ).': '.wc_price($standart_sum);?>
+            </td>
+          </tr>
+          <?
+        }
+      }
+
+      if ($have_free_shipping) {
+        add_action( 'woocommerce_cart_totals_before_shipping', 'rbi_shipping_description', 10, 2 );
+      }
+
+
     }
 ///////////////////////////////////////////////////////
 /////////////// Functions  ////////////////////////////
@@ -509,6 +611,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       foreach ($products_list as $one_value) {
         $one_product = $one_value['data'];
         $product_volume =  ($one_product->get_width()/100) * ($one_product->get_height()/100) * ($one_product->get_length()/100);
+        //if product dont have parameters
+        if ($product_volume == 0) $product_volume = 0.000001;
         $product_weight = $one_product->get_weight();
         $one_value['weight_volume_rate'] = $product_weight/$product_volume;
         $new_products[] = $one_value;
