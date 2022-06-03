@@ -188,6 +188,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       fwrite($flogs,date("d-m-Y H:i:s").'catid-'.print_r( $free_cat_id, true)."  \n");
       $free_sum = 0;
       $have_free_shipping = false;
+      $have_standart_shipping_products = false;
       foreach ( $package['contents'] as $values ) {
         $one_product = $values['data'];
         $product_all_categories = $one_product->get_category_ids();
@@ -242,6 +243,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       //$debug_mess .= '/n'.'items array created';
 
       $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
+
+      if ($total_items_left > 0) $have_standart_shipping_products = true;
+
       fwrite($flogs,date("d-m-Y H:i:s").'total_items_left-'.print_r( $total_items_left, true)."  \n");
 
       $need_big_pallet = 0;
