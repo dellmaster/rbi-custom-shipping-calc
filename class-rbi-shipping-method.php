@@ -188,6 +188,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       fwrite($flogs,date("d-m-Y H:i:s").'catid-'.print_r( $free_cat_id, true)."  \n");
       $free_sum = 0;
       $have_free_shipping = false;
+      $have_standart_shipping_products = false;
       foreach ( $package['contents'] as $values ) {
         $one_product = $values['data'];
         $product_all_categories = $one_product->get_category_ids();
@@ -242,6 +243,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       //$debug_mess .= '/n'.'items array created';
 
       $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
+
+      if ($total_items_left > 0) $have_standart_shipping_products = true;
+
       fwrite($flogs,date("d-m-Y H:i:s").'total_items_left-'.print_r( $total_items_left, true)."  \n");
 
       $need_big_pallet = 0;
@@ -431,7 +435,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           ?>
           <tr>
             <td class="subtotal-products" style="font-weight: 300;">
-              <?echo $one_product->get_name();?>
+              <?echo $values['quantity'].' x '.$one_product->get_name();?>
             </td>
             <td class="subtotal-products" style="font-weight: 300;">
               <?echo wc_price( $values['quantity'] * $one_product->get_price());?>
@@ -451,37 +455,43 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           </td>
         </tr>
         <?
-          foreach($items as $item => $values) {
-            $free_shipping_product = false;
-            $one_product = $values['data'];
-            $product_all_categories = $one_product->get_category_ids();
-            foreach ($product_all_categories as $category) {
-              if ($category == $free_cat_id) $free_shipping_product = true;
+          if (true){
+            $have_standart_shipping_products = false;
+            foreach($items as $item => $values) {
+              $free_shipping_product = false;
+              $one_product = $values['data'];
+              $product_all_categories = $one_product->get_category_ids();
+              foreach ($product_all_categories as $category) {
+                if ($category == $free_cat_id) $free_shipping_product = true;
+                if ($category != $free_cat_id) $have_standart_shipping_products = true;
+              }
+              if ($free_shipping_product != true) {
+              ?>
+              <tr>
+                <td class="subtotal-products" style="font-weight: 300;">
+                  <?echo $values['quantity'].' x '.$one_product->get_name();?>
+                </td>
+                <td class="subtotal-products" style="font-weight: 300;">
+                  <?echo wc_price( $values['quantity'] * $one_product->get_price());?>
+                </td>
+              </tr>
+              <?
+                $standart_sum += $values['quantity'] * $one_product->get_price();
+              }
             }
-            if ($free_shipping_product != true) {
+            if ($have_standart_shipping_products) {
             ?>
             <tr>
-              <td class="subtotal-products" style="font-weight: 300;">
-                <?echo $one_product->get_name();?>
+              <td>
+                <? echo __( 'Standart Shipping Products', 'rbi_shipping' );?>
               </td>
-              <td class="subtotal-products" style="font-weight: 300;">
-                <?echo wc_price( $values['quantity'] * $one_product->get_price());?>
+              <td>
+                  <? echo __( 'Subtotal', 'rbi_shipping' ).': '.wc_price($standart_sum);?>
               </td>
             </tr>
             <?
-              $standart_sum += $values['quantity'] * $one_product->get_price();
             }
           }
-          ?>
-          <tr>
-            <td>
-              <? echo __( 'Standart Shipping Products', 'rbi_shipping' );?>
-            </td>
-            <td>
-                <? echo __( 'Subtotal', 'rbi_shipping' ).': '.wc_price($standart_sum);?>
-            </td>
-          </tr>
-          <?
         }
       }
 
