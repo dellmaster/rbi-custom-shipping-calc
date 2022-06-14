@@ -271,16 +271,21 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $left_volume_in_courier_pack = ($this->shipping_variant['courier']['max_width']/1000) * ($this->shipping_variant['courier']['max_height']/1000) * ($this->shipping_variant['courier']['max_length']/1000);
       fwrite($flogs,date("d-m-Y H:i:s").'left_volume_in_courier_pack-'.print_r( $left_volume_in_courier_pack, true)."  \n");
 
+      $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
+      $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
+
+      $left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
+      $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
 
       while ($total_items_left > 0) {
         //$debug_mess .= '/n'.'items left';
-        $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
-        $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
+        //$left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
+        //$left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
         fwrite($flogs,date("d-m-Y H:i:s").'left_weight_in_big_pallet-'.print_r( $left_weight_in_big_pallet, true)."  \n");
         fwrite($flogs,date("d-m-Y H:i:s").'left_volume_in_big_pallet-'.print_r( $left_volume_in_big_pallet, true)."  \n");
 
-        $left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
-        $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
+        //$left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
+        //$left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
         fwrite($flogs,date("d-m-Y H:i:s").'left_weight_in_small_pallet-'.print_r( $left_weight_in_small_pallet, true)."  \n");
         fwrite($flogs,date("d-m-Y H:i:s").'left_volume_in_small_pallet-'.print_r( $left_volume_in_small_pallet, true)."  \n");
 
@@ -335,6 +340,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $left_volume_in_small_pallet = 0;
         }
         fwrite($flogs,date("d-m-Y H:i:s").'courier_packet_items-'.print_r( count($courier_packet_items), true)."  \n");
+
         if (count($courier_packet_items) > 0) {
           //if we have courier items then 1st step put it on big pallet free space
           $courier_packet_items_sort_more_volume = $this->sort_products_put_more_volume($courier_packet_items);
@@ -344,6 +350,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           //$left_weight_in_big_pallet = $put_in_small_pallet_response['weight_left'];
           //$left_volume_in_big_pallet = $put_in_small_pallet_response['volume_left'];
           fwrite($flogs,date("d-m-Y H:i:s").'courier_packet_items-'.print_r( count($courier_packet_items), true)."  \n");
+
           if (count($courier_packet_items) > 0) {
             // if courier items left then 2nd step put courier items to small pallet free space
             $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
@@ -352,6 +359,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
             $courier_packet_items = $put_in_small_pallet_response['not_in_pack_items_array'];
             fwrite($flogs,date("d-m-Y H:i:s").'courier_packet_items-'.print_r( count($courier_packet_items), true)."  \n");
+
             if (count($courier_packet_items) > 0) {
 
               // if courier items left then 3rd step put courier items to courier packet
@@ -359,7 +367,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
               $put_in_courier_packet_response = $this->put_products_in_volume_and_weight($courier_packet_items, $left_weight_in_courier_pack, $left_volume_in_courier_pack);
               fwrite($flogs,date("d-m-Y H:i:s").'left_weight_in_courier_pack -'.print_r( $left_weight_in_courier_pack, true)."  \n");
               //remember start items array
-              if ($need_small_pallet == 0) $courier_packet_items_start = $courier_packet_items;
+              if ($need_courier_pack == 0) $courier_packet_items_start = $courier_packet_items;
 
               $courier_packet_items = $put_in_courier_packet_response['not_in_pack_items_array'];
               fwrite($flogs,date("d-m-Y H:i:s").'not_in_pack_items_array count-'.print_r( count($courier_packet_items), true)."  \n");
@@ -368,7 +376,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
               if (count($put_in_courier_packet_response['in_pack_items_array']) > 0) {
                 $need_courier_pack++;
 
-                if ($need_courier_pack * $this->shipping_variant['courier']['price'] > $this->shipping_variant['small_pallet']['price']){
+                if (($need_courier_pack * $this->shipping_variant['courier']['price']) > $this->shipping_variant['small_pallet']['price']){
                   $left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
                   $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
                   $need_small_pallet++;
