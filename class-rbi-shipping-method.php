@@ -277,6 +277,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
       $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
 
+      $left_weight_in_small_pallet_switch = 0;
+      $left_volume_in_small_pallet_switch = 0;
+
       while ($total_items_left > 0) {
         //$debug_mess .= '/n'.'items left';
         //$left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
@@ -352,6 +355,12 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           fwrite($flogs,date("d-m-Y H:i:s").'courier_packet_items-'.print_r( count($courier_packet_items), true)."  \n");
 
           if (count($courier_packet_items) > 0) {
+
+            $left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_switch;
+            $left_weight_in_small_pallet_switch = 0;
+            $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_switch;
+            $left_volume_in_small_pallet_switch = 0;
+
             // if courier items left then 2nd step put courier items to small pallet free space
             $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
             $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
@@ -376,9 +385,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
               if (count($put_in_courier_packet_response['in_pack_items_array']) > 0) {
                 $need_courier_pack++;
 
-                if (($need_courier_pack * $this->shipping_variant['courier']['price']) > $this->shipping_variant['small_pallet']['price']){
-                  $left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
-                  $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
+                if (($need_courier_pack * $this->shipping_variant['courier']['price']) > $this->shipping_variant['small_pallet']['price']) {
+                  $left_weight_in_small_pallet_switch = $left_weight_in_small_pallet_start;
+                  $left_volume_in_small_pallet_switch = $left_volume_in_small_pallet_start;
                   $need_small_pallet++;
                   $need_courier_pack = 0;
                   $courier_packet_items = $courier_packet_items_start;
