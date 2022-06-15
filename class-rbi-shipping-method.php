@@ -271,11 +271,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $left_volume_in_courier_pack = ($this->shipping_variant['courier']['max_width']/1000) * ($this->shipping_variant['courier']['max_height']/1000) * ($this->shipping_variant['courier']['max_length']/1000);
       fwrite($flogs,date("d-m-Y H:i:s").'left_volume_in_courier_pack-'.print_r( $left_volume_in_courier_pack, true)."  \n");
 
-      $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
-      $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
+      //$left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
+      //$left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
 
-      $left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
-      $left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
+      //$left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
+      //$left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
 
       $left_weight_in_small_pallet_switch = 0;
       $left_volume_in_small_pallet_switch = 0;
@@ -293,6 +293,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         fwrite($flogs,date("d-m-Y H:i:s").'left_volume_in_small_pallet-'.print_r( $left_volume_in_small_pallet, true)."  \n");
 
         if (count($big_pallet_items)>0){
+
+          $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
+          $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
+          
           //$debug_mess .= '/n'.'big items';
           //if we have big pallet items - put it at big pallet
           $big_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($big_pallet_items);
@@ -322,6 +326,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $left_volume_in_big_pallet = $put_in_big_pallet_response['volume_left'];
 
           if (count($small_pallet_items) > 0) {
+
+            $left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_start;
+            $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_start;
+
             //if small pallet products left -  then 2nd step put it on small pallet free space
             $small_pallet_items_sort_more_weight = $this->sort_products_put_more_weight($small_pallet_items);
             $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
@@ -330,7 +338,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
             $left_weight_in_small_pallet = $put_in_small_pallet_response['weight_left'];
             $left_volume_in_small_pallet = $put_in_small_pallet_response['volume_left'];
 
-            if (count($put_in_small_pallet_response['in_pack_items_array']) > 0) $need_small_pallet++;
+            if (count($put_in_small_pallet_response['in_pack_items_array']) > 0) {
+              $need_small_pallet++;
+
+            }
             //if we put some products to small pallet - increase it
           }
           fwrite($flogs,date("d-m-Y H:i:s").'need_small_pallet-'.print_r( $need_small_pallet, true)."  \n");
