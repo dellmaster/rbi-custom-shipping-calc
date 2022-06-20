@@ -236,11 +236,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         if ($free_shipping_product && $have_free_shipping) {
           $free_shipping_products = $values;
         }
-        elseif (can_put_in_courier_package($one_product)) {
+        elseif ($this->can_put_in_courier_package($one_product)) {
           //can put it to courier package
           $courier_packet_products[] = $values;
         }
-        elseif(can_put_in_small_pallet($one_product)) {
+        elseif($this->can_put_in_small_pallet($one_product)) {
           //can put it to small pallet
           $small_pallet_products[] = $values;
         }
