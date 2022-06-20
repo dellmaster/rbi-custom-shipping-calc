@@ -215,7 +215,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         foreach ($product_all_categories as $category) {
           if ($category == $free_cat_id) $free_shipping_product = true;
         }
-        if ($free_shipping_product && $have_free_shipping) {
+
+        /*if ($free_shipping_product && $have_free_shipping) {
           $free_shipping_products = $values;
         }
         elseif ($product_max_size > $this->small_pallet_max_length) {
@@ -229,7 +230,26 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         else {
           // all other products we put in courier box
           $courier_packet_products[] = $values;
+        }*/
+
+        
+        if ($free_shipping_product && $have_free_shipping) {
+          $free_shipping_products = $values;
         }
+        elseif (can_put_in_courier_package($one_product)) {
+          //can put it to courier package
+          $courier_packet_products[] = $values;
+        }
+        elseif(can_put_in_small_pallet($one_product)) {
+          //can put it to small pallet
+          $small_pallet_products[] = $values;
+        }
+        else {
+          // all other products we put in courier box
+          $big_pallet_products[] = $values;
+        }
+
+
       }
       //$debug_mess .= '<br />'.'big pr-'.count($big_pallet_products);
       //$debug_mess .= '<br />'.'small pr-'.count($small_pallet_products);
@@ -438,6 +458,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       $this->add_rate( $rate );
 
+
+      // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+      // ++++++ Shipping cost display +++++++++++++++++++++++
+      // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+
       function rbi_shipping_description() {
         global $woocommerce;
 
@@ -482,6 +507,14 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
             <? echo __( 'Subtotal', 'rbi_shipping' ).': '.wc_price($free_sum);?>
           </td>
         </tr>
+        <tr class="woocommerce-shipping-totals shipping">
+          <td>
+          <? echo __( 'Free Shipping', 'rbi_shipping' );?>
+          </td>
+          <td>
+            0,00 <?php echo get_woocommerce_currency_symbol(); ?>
+          </td>
+        </tr>
         <?
           if (true){
             $have_standart_shipping_products = false;
@@ -522,7 +555,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           }
         }
       }
-
+      
+      // If have Free Shipping products in order - display free shipping description
       if ($have_free_shipping) {
         add_action( 'woocommerce_cart_totals_before_shipping', 'rbi_shipping_description', 10, 2 );
       }
@@ -533,6 +567,46 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 /////////////// Functions  ////////////////////////////
 ///////////////////////////////////////////////////////
 
+    public function shift_array_in_left ($arr) {
+      $item = array_shift($arr);
+      array_push ($arr,$item);
+      return $arr;
+     }
+
+    public function can_put_in_courier_package($product) {
+      
+      if ($product->get_weight() <= $this->courier_max_weight) {
+        $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
+        $package_sizes = array($this->courier_max_length, $this->courier_max_width, $this->courier_max_height);
+
+        for($k=1; $k <= 3; $k++) {
+          if (($package_sizes[0] >= $product_sizes[0]) && ($package_sizes[1] >= $product_sizes[1]) && ($package_sizes[2] >= $product_sizes[2])) return true;
+          $product_sizes = $this->shift_array_in_left($product_sizes);
+        }
+        
+      }
+
+      return false;
+      
+    }
+
+    public function can_put_in_small_pallet($product) {
+      
+      if ($product->get_weight() <= $this->small_pallet_max_weight) {
+        $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
+        $package_sizes = array($this->small_pallet_max_length, $this->small_pallet_max_width, $this->small_pallet_max_height);
+
+        for($k=1; $k <= 3; $k++) {
+          if (($package_sizes[0] >= $product_sizes[0]) && ($package_sizes[1] >= $product_sizes[1]) && ($package_sizes[2] >= $product_sizes[2])) return true;
+          $product_sizes = $this->shift_array_in_left($product_sizes);
+        }
+        
+      }
+
+      return false;
+      
+    }
+/*
     // count big pallets by weight of pruducts
     public function calc_pack_by_weight($items, $pack_max_weight) {
       $need_big_pallets = array();
@@ -559,7 +633,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       return $need_big_pallets;
     }
-
+*/
+/*
     public function add_volume_to_product_array($products_list) {
       $result_array = array();
       foreach ($products_list as $one_value) {
@@ -571,7 +646,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       return $result_array;
     }
-
+*/
 
 
     //создание массива с единицами товара
@@ -620,7 +695,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
     }
 
     // calc products weight from given products list
-    public function calc_products_weight($products_list) {
+    /*public function calc_products_weight($products_list) {
       $total_weight = 0;
       foreach ($products_list as $one_value) {
         $one_product = $one_value['data'];
@@ -628,7 +703,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       }
 
       return $total_weight;
-    }
+    }*/
 
 
 
@@ -690,7 +765,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
 
     //calculation of the number of pallets by weight and pallet type
-    public function calc_pallets_by_weight($products_list, $pallet_type) {
+    /*public function calc_pallets_by_weight($products_list, $pallet_type) {
       $need_pallets = array();
       $total_weight = $this->calc_products_weight($products_list);
 
@@ -700,10 +775,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $need_pallets['left'] = $need_pallets['num'] * $this->shipping_variant[$pallet_type]['max_weight'] - $total_weight;
 
       return $need_pallets;
-    }
+    }*/
 
     //calculation of the number of pallets by volume and pallet type
-    public function calc_pallets_by_volume($products_list, $pallet_type) {
+    /*public function calc_pallets_by_volume($products_list, $pallet_type) {
       $need_big_pallets = array();
       $total_volume = $this->calc_products_volume($products_list);
 
@@ -715,10 +790,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $need_big_pallets['left'] = $need_big_pallets['num'] * $pallet_max_volume - $total_volume;
 
       return $need_big_pallets;
-    }
+    }*/
 
     // count big pallets by weight of pruducts
-    public function calc_big_pallets_by_weight($big_pallet_products) {
+    /*public function calc_big_pallets_by_weight($big_pallet_products) {
       $need_big_pallets = array();
       $total_weight = $this->calc_products_weight($big_pallet_products);
 
@@ -727,11 +802,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $need_big_pallets['weight_left'] = $need_big_pallets['num'] * $this->shipping_variant['big_pallet']['max_weight'] - $total_weight;
 
       return $need_big_pallets;
-    }
+    }*/
 
 
     // count big pallets by volume of pruducts
-    public function calc_big_pallets_by_volume($big_pallet_products) {
+    /*public function calc_big_pallets_by_volume($big_pallet_products) {
       $need_big_pallets = array();
       $total_volume = $this->calc_products_volume($big_pallet_products);
 
@@ -742,7 +817,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $need_big_pallets['volume_left'] = $need_big_pallets['num'] * $big_pallet_max_volume - $total_volume;
 
       return $need_big_pallets;
-    }
+    }*/
 
     // check product max size with courier package max length, if the package fits - return TRUE
     public function courier_check_size($product_in_cart) {
