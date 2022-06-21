@@ -89,6 +89,8 @@ function rbi_shipping_menu_page(){
 		20 // позиция в меню
 	);
 
+  add_submenu_page('rbi_shipping_settings', 'RBI Shipping - Separate shipping rates', 'Shipping rates', 'manage_options', 'rbit_shipping_rates', 'rbit_shipping_rates_callback');
+
 
 }
 
@@ -102,6 +104,147 @@ function rbi_shipping_settings_callback(){
 		submit_button(); // submit button show
 
   echo '</form></div>';
+}
+
+function rbit_shipping_rates_callback()
+{
+  if (isset($_POST['rbit_table_action'])) {
+    
+
+    $rbit_separate_shipping_rate_list = array();
+
+    if (!get_option("rbit_separate_shipping_rate_list")) {
+      add_option("rbit_separate_shipping_rate_list", $rbit_separate_shipping_rate_list);
+    }
+
+    if($_POST['rbit_table_action'] == 'add') {
+      $new_cat_add = array('id' => $_POST['rbit_category_id_add'], 'price' => $_POST['rbit_separate_shipping_price']);
+      print_r($new_cat_add);
+      if (!get_option("rbit_separate_shipping_rate_list")) {
+        $rbit_separate_shipping_rate_list[] = $new_cat_add;
+        update_option("rbit_separate_shipping_rate_list", $rbit_separate_shipping_rate_list);
+      }
+      else {
+        $rbit_separate_shipping_rate_list = get_option('rbit_separate_shipping_rate_list');
+        $rbit_separate_shipping_rate_list[] = $new_cat_add;
+        update_option( 'rbit_separate_shipping_rate_list', $rbit_separate_shipping_rate_list );
+      }
+
+    }
+
+    if ($_POST['rbit_table_action'] == 'delete') {
+
+      //print_r($_POST['rbit_category_select']);
+      $category_array = get_option("rbit_separate_shipping_rate_list");
+      $new_category_array = array();
+      foreach($category_array as $value) {
+        if( !in_array($value['id'], $_POST['rbit_category_select'])) $new_category_array[] = $value;
+      }
+
+      update_option( 'rbit_separate_shipping_rate_list', $new_category_array );
+
+    }
+
+  }
+
+  $select_list = '';
+  $category_array = array();
+  $argscat = array('taxonomy' => 'product_cat');
+  $categories = get_categories( $argscat );
+  foreach ($categories as $item_cat) {
+    $select_list .= '<option value="'.$item_cat->term_id.'">'.$item_cat->name.'</option>';
+    $category_array[$item_cat->term_id] = $item_cat->name;
+  }
+
+  $rbit_separate_shipping_rate_list = array();
+  if (get_option("rbit_separate_shipping_rate_list")) {
+    $rbit_separate_shipping_rate_list = get_option('rbit_separate_shipping_rate_list');
+  }
+  ?>
+      <style>
+        .rbit-settings-block {
+          margin:10px;
+        }
+         
+        .collapsed  td, .collapsed  th{
+            border: solid 1px #ccc;
+            text-align: center;
+        }
+        .collapsed{
+            border-collapse: collapse;
+            border: 1px solid #ccc;
+            border-spacing: 3px;
+            
+        }
+        .separated{
+            border-collapse: separate;
+        }
+      </style>
+  <div class="wrapper rbit-options rbit-settings-block">
+    <div class="row">
+
+
+
+      <div class="col-6">
+      <form action="" method="post">
+        <input type="hidden" name="rbit_table_action" value="add">
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>Shipping Price</th>
+                <th>Action</th>
+            </tr>
+            <tr>
+                <td>
+                <select name="rbit_category_id_add">
+                  <?php echo $select_list ?>
+                </select>
+                </td>
+                <td>
+                  <input type="number" id="rbit_separate_shipping_price" name="rbit_separate_shipping_price" min="1" max="1000" style="min-width:200px">
+                </td>
+                <td>
+                  <button type="submit" class="button button-primary">Add</button>
+                </td>
+            </tr>
+        </table>
+
+      </form>
+
+
+        <form action="" method="post">
+          <input type="hidden" name="rbit_table_action" value="delete">
+          <table class="collapsed">
+          <tr>
+              <th>Select</th>
+              <th>Category</th>
+              <th>Shipping Price</th>
+            </tr>
+            <?php
+            foreach($rbit_separate_shipping_rate_list as $value) {
+
+
+            
+            ?>
+            <tr>
+              <td style="min-width: 100px; text-align: center;"><input type="checkbox" id="rbit_category_select" name="rbit_category_select[]" value="<?=$value['id'];?>"></td>
+              <td style="min-width: 300px; text-align: center;"><?=$category_array[$value['id']];?></td>
+              <td style="min-width: 200px; text-align: center;"><?=$value['price'];?></td>
+            </tr>
+
+            <?php
+            }
+            ?>
+          </table>
+          <br />
+          <button type="submit" class="button button-primary">Delete Selected</button>
+        </form>
+        
+      </div>
+    </div>
+  </div>
+
+  <?php
 }
 
 add_action( 'admin_init',  'rbi_shipping_fields' );
@@ -534,7 +677,9 @@ function rbi_id_field( $args ){
   $argscat = array('taxonomy' => 'product_cat');
   $categories = get_categories( $argscat );
   foreach ($categories as $item_cat) {
-    $select_list .= '<option value="'.$item_cat->term_id.'">'.$item_cat->name.'</option>';
+    $selected = '';
+    if ($value == $item_cat->term_id) $selected = 'selected';
+    $select_list .= '<option value="'.$item_cat->term_id.'" '.$selected.'>'.$item_cat->name.'</option>';
   }
 
   printf(
