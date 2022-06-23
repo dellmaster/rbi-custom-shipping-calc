@@ -3,7 +3,7 @@
  * Plugin Name: RBI Custom Shipping Calculator
  * Plugin URI: //runbyit.com/
  * Description: Custom Shipping Calculator for WooCommerce
- * Version: 1.5.0
+ * Version: 1.6.0
  * Author: Oleksii Yurchenko
  * Author URI: //runbyit.com/
  */
@@ -152,7 +152,7 @@ function rbit_shipping_rates_callback()
   $argscat = array('taxonomy' => 'product_cat');
   $categories = get_categories( $argscat );
   foreach ($categories as $item_cat) {
-    $select_list .= '<option value="'.$item_cat->term_id.'">'.$item_cat->name.'</option>';
+    $select_list .= '<option value="'.$item_cat->term_id.'">'.$item_cat->term_id.'-'.$item_cat->name.'</option>';
     $category_array[$item_cat->term_id] = $item_cat->name;
   }
 
@@ -226,7 +226,7 @@ function rbit_shipping_rates_callback()
             ?>
             <tr>
               <td style="min-width: 100px; text-align: center;"><input type="checkbox" id="rbit_category_select" name="rbit_category_select[]" value="<?=$value['id'];?>"></td>
-              <td style="min-width: 300px; text-align: center;"><?=$category_array[$value['id']];?></td>
+              <td style="min-width: 300px; text-align: center;"><?=$value['id'];?>-<?=$category_array[$value['id']];?></td>
               <td style="min-width: 200px; text-align: center;"><?=$value['price'];?></td>
             </tr>
 

@@ -480,7 +480,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       //========================================================
       $need_shp_courier_pack_array = array();
       $separate_shipping_total_price = 0;
-      while (count($separate_shipping_cost_products) > 0) {
+      while (count($separate_shipping_cost_items) > 0) {
 
         //Try put it ti big pallet
         if ($need_big_pallet > 0){
@@ -520,12 +520,6 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
 
       }
-
-
-      
-
-
-
 
       //================================================
       //=====END Separate Shipping Price products=======
