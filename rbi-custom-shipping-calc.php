@@ -223,8 +223,6 @@ function rbit_shipping_rates_callback()
             <?php
             foreach($rbit_separate_shipping_rate_list as $value) {
 
-
-            
             ?>
             <tr>
               <td style="min-width: 100px; text-align: center;"><input type="checkbox" id="rbit_category_select" name="rbit_category_select[]" value="<?=$value['id'];?>"></td>
