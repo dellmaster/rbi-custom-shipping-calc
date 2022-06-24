@@ -266,7 +266,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $max_price_cat_id = array_keys($product_cat_with_price_array, max($product_cat_with_price_array))[0];
           $max_price_for_current_product_shipping = $product_cat_with_price_array[$max_price_cat_id];
 
-          $values['shp_price'] = $max_price_for_current_product_shipping;
+          $values['shp_price'] = floatval($max_price_for_current_product_shipping);
           $values['shp_cat_id'] = $max_price_cat_id;
           $separate_shipping_cost_products[] = $values;
 
@@ -480,11 +480,14 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       //========================================================
       $need_shp_courier_pack_array = array();
       $separate_shipping_total_price = 0;
+
+      $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
+
       while (count($separate_shipping_cost_items) > 0) {
 
         //Try put it ti big pallet
         if ($need_big_pallet > 0){
-          $separate_shipping_cost_items = $this->sort_products_to_max_shipping_price($separate_shipping_cost_items);
+          $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
           $put_in_big_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
   
           $left_weight_in_big_pallet = $put_in_big_pallet_shp_response['weight_left'];
@@ -494,7 +497,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
         //then try put it to small pallet
         if ($need_small_pallet > 0) {
-          $separate_shipping_cost_items = $this->sort_products_to_max_shipping_price($separate_shipping_cost_items);
+          $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
           $put_in_small_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
   
           $left_weight_in_small_pallet = $put_in_small_pallet_shp_response['weight_left'];
@@ -502,10 +505,14 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $separate_shipping_cost_items = $put_in_small_pallet_shp_response['not_in_pack_items_array'];
         }
 
+        //$separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_min_price($separate_shipping_cost_items);
         //then put it to courier box
         if (count($separate_shipping_cost_items) > 0) {
           //get_max_shipping_price()
-          $separate_shipping_cost_items = $this->sort_products_to_max_shipping_price($separate_shipping_cost_items);
+          //$separate_shipping_cost_items = $this->sort_products_to_max_shipping_price($separate_shipping_cost_items);
+
+          $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
+
           $put_in_small_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_shp, $left_volume_in_shp);
           
           $separate_shipping_cost_items = $put_in_small_pallet_shp_response['not_in_pack_items_array'];
@@ -668,12 +675,24 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
   }
 
   public function separate_shipping_cost_array_compare($a, $b) {
-    return $b['price'] <=> $a['price'];
+    return $b['shp_price'] <=> $a['shp_price'];
+
+  }
+
+  
+  public function separate_shipping_cost_array_compare_min_price($a, $b) {
+    return $a['shp_price'] <=> $b['shp_price'];
   }
 
   public function separate_shipping_cost_array_sort_by_price($cat_array) {
-  return usort($cat_array, [RBI_Shipping_Method::class, "separate_shipping_cost_array_compare"]);
+   usort($cat_array, [RBI_Shipping_Method::class, "separate_shipping_cost_array_compare"]);
+   return $cat_array;
   }
+
+  public function separate_shipping_cost_array_sort_by_min_price($cat_array) {
+    usort($cat_array, [RBI_Shipping_Method::class, "separate_shipping_cost_array_compare_min_price"]);
+    return $cat_array;
+    }
 
 
   /*public function put_shp_products_in_volume_and_weight($shp_products, $left_weight_in_big_pallet, $left_volume_in_big_pallet){
@@ -862,7 +881,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         return 0;
     }
 
-    return ($product_a['weight_volume_rate'] < $product_b['weight_volume_rate']) ? -1 : 1;
+    return ($product_a['shp_price'] < $product_b['shp_price']) ? -1 : 1;
     }
     
     public function sort_products_put_more_volume($products_list) {

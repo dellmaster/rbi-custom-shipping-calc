@@ -106,6 +106,26 @@ function rbi_shipping_settings_callback(){
   echo '</form></div>';
 }
 
+function category_array_sort_callback($a, $b) {
+  //return intval($a['id']) <=> intval($b['id']);
+  if (intval($a['id']) == intval($b['id'])) {
+      $resp = 0;
+  }
+  //$resp = (intval($a['id']) < intval($b['id'])) ? -1 : 1;
+  if(intval($a['id']) < intval($b['id'])) $resp = -1;
+   else $resp = 1;
+  return $resp;
+}
+
+function category_array_sort($cat_array) {
+  usort($cat_array, "category_array_sort_callback");
+  return $cat_array;
+}
+
+function category_array_sort_cat_callback($a, $b) {
+  return intval($a->term_id) <=> intval($b->term_id);
+}
+
 function rbit_shipping_rates_callback()
 {
   if (isset($_POST['rbit_table_action'])) {
@@ -151,6 +171,7 @@ function rbit_shipping_rates_callback()
   $category_array = array();
   $argscat = array('taxonomy' => 'product_cat');
   $categories = get_categories( $argscat );
+  usort($categories, "category_array_sort_cat_callback");
   foreach ($categories as $item_cat) {
     $select_list .= '<option value="'.$item_cat->term_id.'">'.$item_cat->term_id.'-'.$item_cat->name.'</option>';
     $category_array[$item_cat->term_id] = $item_cat->name;
@@ -160,6 +181,11 @@ function rbit_shipping_rates_callback()
   if (get_option("rbit_separate_shipping_rate_list")) {
     $rbit_separate_shipping_rate_list = get_option('rbit_separate_shipping_rate_list');
   }
+  
+  usort($rbit_separate_shipping_rate_list, "category_array_sort_callback");
+  //print_r($rbit_separate_shipping_rate_list);
+  //category_array_sort($rbit_separate_shipping_rate_list);
+  //$rbit_separate_shipping_rate_list = $rbit_separate_shipping_rate_list;
   ?>
       <style>
         .rbit-settings-block {
