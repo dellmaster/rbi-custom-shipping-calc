@@ -3,7 +3,7 @@
  * Plugin Name: RBI Custom Shipping Calculator
  * Plugin URI: //runbyit.com/
  * Description: Custom Shipping Calculator for WooCommerce
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: Oleksii Yurchenko
  * Author URI: //runbyit.com/
  */
@@ -139,7 +139,7 @@ function rbit_shipping_rates_callback()
 
     if($_POST['rbit_table_action'] == 'add') {
       $new_cat_add = array('id' => $_POST['rbit_category_id_add'], 'price' => $_POST['rbit_separate_shipping_price']);
-      print_r($new_cat_add);
+      //print_r($new_cat_add);
       if (!get_option("rbit_separate_shipping_rate_list")) {
         $rbit_separate_shipping_rate_list[] = $new_cat_add;
         update_option("rbit_separate_shipping_rate_list", $rbit_separate_shipping_rate_list);
