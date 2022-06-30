@@ -336,7 +336,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           //$debug_mess .= '/n'.'big items';
           //if we have big pallet items - put it at big pallet
           $big_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($big_pallet_items);
-          $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($big_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+          $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($big_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet, 'big_pallet');
 
           $big_pallet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
           $left_weight_in_big_pallet = $put_in_big_pallet_response['weight_left'];
@@ -355,7 +355,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         if (count($small_pallet_items) > 0) {
           //if we have small pallet items then 1st step put it on big pallet free space
           $small_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($small_pallet_items);
-          $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+          $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet, 'big_pallet');
 
           $small_pallet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
           $left_weight_in_big_pallet = $put_in_big_pallet_response['weight_left'];
@@ -368,7 +368,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
             //if small pallet products left -  then 2nd step put it on small pallet free space
             $small_pallet_items_sort_more_weight = $this->sort_products_put_more_weight($small_pallet_items);
-            $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
+            $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet, 'small_pallet');
 
             $small_pallet_items = $put_in_small_pallet_response['not_in_pack_items_array'];
             $left_weight_in_small_pallet = $put_in_small_pallet_response['weight_left'];
@@ -392,7 +392,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         if (count($courier_packet_items) > 0) {
           //if we have courier items then 1st step put it on big pallet free space
           $courier_packet_items_sort_more_volume = $this->sort_products_put_more_volume($courier_packet_items);
-          $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+          $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet, 'big_pallet');
 
           $courier_packet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
           //$left_weight_in_big_pallet = $put_in_small_pallet_response['weight_left'];
@@ -408,7 +408,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
             // if courier items left then 2nd step put courier items to small pallet free space
             $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
-            $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
+            $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet, 'small_pallet');
 
 
             $courier_packet_items = $put_in_small_pallet_response['not_in_pack_items_array'];
@@ -418,7 +418,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
               // if courier items left then 3rd step put courier items to courier packet
               //$courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
-              $put_in_courier_packet_response = $this->put_products_in_volume_and_weight($courier_packet_items, $left_weight_in_courier_pack, $left_volume_in_courier_pack);
+              $put_in_courier_packet_response = $this->put_products_in_volume_and_weight($courier_packet_items, $left_weight_in_courier_pack, $left_volume_in_courier_pack, 'courier');
 
               //remember start items array
               if ($need_courier_pack == 0) $courier_packet_items_start = $courier_packet_items;
@@ -456,12 +456,13 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
 
+      //Items with separate shipping cost
       while (count($separate_shipping_cost_items) > 0) {
 
-        //Try put it ti big pallet
+        //Try put it to big pallet
         if ($need_big_pallet > 0){
           $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
-          $put_in_big_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_big_pallet, $left_volume_in_big_pallet);
+          $put_in_big_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_big_pallet, $left_volume_in_big_pallet, 'big_pallet');
   
           $left_weight_in_big_pallet = $put_in_big_pallet_shp_response['weight_left'];
           $left_volume_in_big_pallet = $put_in_big_pallet_shp_response['volume_left'];
@@ -471,7 +472,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         //then try put it to small pallet
         if ($need_small_pallet > 0) {
           $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
-          $put_in_small_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_small_pallet, $left_volume_in_small_pallet);
+          $put_in_small_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_small_pallet, $left_volume_in_small_pallet, 'small_pallet');
   
           $left_weight_in_small_pallet = $put_in_small_pallet_shp_response['weight_left'];
           $left_volume_in_small_pallet = $put_in_small_pallet_shp_response['volume_left'];
@@ -486,7 +487,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
           $separate_shipping_cost_items = $this->separate_shipping_cost_array_sort_by_price($separate_shipping_cost_items);
 
-          $put_in_small_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_shp, $left_volume_in_shp);
+          $put_in_small_pallet_shp_response = $this->put_products_in_volume_and_weight($separate_shipping_cost_items, $left_weight_in_shp, $left_volume_in_shp, 'courier');
           
           $separate_shipping_cost_items = $put_in_small_pallet_shp_response['not_in_pack_items_array'];
           if (count($put_in_small_pallet_shp_response['in_pack_items_array']) > 0) {
@@ -676,6 +677,22 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
   }*/
 
+    public function can_put_item_to_this_pack($product, $pack_type_name) {
+      $shipping_variant = $this->shipping_variant[$pack_type_name];
+      if ($product->get_weight() <= $shipping_variant['max_weight']) {
+        $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
+        $package_sizes = array($shipping_variant['max_length'], $shipping_variant['max_width'], $shipping_variant['max_height']);
+
+        for($k=1; $k <= 3; $k++) {
+          if (($package_sizes[0] >= $product_sizes[0]) && ($package_sizes[1] >= $product_sizes[1]) && ($package_sizes[2] >= $product_sizes[2])) return true;
+          $product_sizes = $this->shift_array_in_left($product_sizes);
+        }
+        
+      }
+
+      return false;
+    }
+
     public function shift_array_in_left ($arr) {
       $item = array_shift($arr);
       array_push ($arr,$item);
@@ -715,6 +732,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       return false;
       
     }
+
+
 /*
     // count big pallets by weight of pruducts
     public function calc_pack_by_weight($items, $pack_max_weight) {
@@ -772,8 +791,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
     }
 
     // Try put items in weight and volume
-    public function put_products_in_volume_and_weight($items, $free_weight, $free_volume)
+    public function put_products_in_volume_and_weight($items, $free_weight, $free_volume, $pack_type_name = 'courier')
     {
+      //courier, small_pallet, big_pallet
+      
       $response_array = array();
       $in_pack_items_array = array();
       $not_in_pack_items_array = array();
@@ -784,7 +805,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       foreach ($items as $item) {
         $item_details = $item['data'];
         $item_volume = ($item_details->get_width()/100) * ($item_details->get_height()/100) * ($item_details->get_length()/100);
-        if ((($weight_left - $item_details->get_weight()) >= 0) && ($volume_left - $item_volume) >= 0) {
+        $can_put_item_to_this_pack = $this->can_put_item_to_this_pack($item_details, $pack_type_name);
+        if ((($weight_left - $item_details->get_weight()) >= 0) && ($volume_left - $item_volume) >= 0 && $can_put_item_to_this_pack) {
           $in_pack_items_array[] = $item;
           $weight_left = $weight_left - $item_details->get_weight();
           $volume_left = $volume_left - $item_volume;
