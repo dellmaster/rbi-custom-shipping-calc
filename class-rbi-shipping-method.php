@@ -213,7 +213,18 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
   
   
         //Check free shipping category
-        $product_all_categories = $one_product->get_category_ids();
+        if ( $one_product->parent_id > 0 ) { //$one_product['parent_id']
+          $parent_product = wc_get_product( $one_product->parent_id );
+          $product_all_categories = $parent_product->get_category_ids();
+        }
+        else {
+          $product_all_categories = $one_product->get_category_ids();
+        }
+
+        //$product_all_categories = $one_product->get_category_ids();
+        //$test_mess = print_r($one_product->parent_id, true);
+        //$test_mess .= '--';
+        //$test_mess .= print_r($product_all_categories, true);
         foreach ($product_all_categories as $category) {
           if ($category == $free_cat_id) $free_shipping_product = true;
         }
@@ -242,7 +253,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $free_shipping_products = $values;
         }
         elseif(count($separate_sipping_array_by_categorie) > 0) {
-
+          //$test_mess = print_r($product_all_categories, true);
           $product_cat_with_price_array = array();
         
           foreach ($separate_sipping_array_by_categorie as $cat_id) {
@@ -282,6 +293,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $small_pallet_items = $this->products_weight_and_volume_rate($this->create_items_array($small_pallet_products));
       $courier_packet_items = $this->products_weight_and_volume_rate($this->create_items_array($courier_packet_products));
       $separate_shipping_cost_items = $this->create_items_array($separate_shipping_cost_products);
+
+      $already_placed_courier_items = array();
+
       //$debug_mess .= '/n'.'items array created';
 
       $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
@@ -303,9 +317,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
 
       $left_weight_in_courier_pack = $this->shipping_variant['courier']['max_weight'];
+      $left_weight_in_courier_pack_start = $left_weight_in_courier_pack;
 
 
       $left_volume_in_courier_pack = ($this->shipping_variant['courier']['max_width']/1000) * ($this->shipping_variant['courier']['max_height']/1000) * ($this->shipping_variant['courier']['max_length']/1000);
+      $left_volume_in_courier_pack_start = $left_volume_in_courier_pack;
 
 
       $left_weight_in_shp = $left_weight_in_courier_pack;
@@ -401,9 +417,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
           if (count($courier_packet_items) > 0) {
 
-            $left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_switch;
             $left_weight_in_small_pallet_switch = 0;
-            $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_switch;
+
             $left_volume_in_small_pallet_switch = 0;
 
             // if courier items left then 2nd step put courier items to small pallet free space
@@ -425,18 +440,79 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
               $courier_packet_items = $put_in_courier_packet_response['not_in_pack_items_array'];
 
+              foreach ($put_in_courier_packet_response['in_pack_items_array'] as $item) {
+
+                $already_placed_courier_items[] = $item;
+
+              }
+
+
+               
+
               if (count($put_in_courier_packet_response['in_pack_items_array']) > 0) {
                 $need_courier_pack++;
+                $replace_small_pallets = 0;
+                $replace_courier_pack = 0;
 
-                if (($need_courier_pack * $this->shipping_variant['courier']['price']) > $this->shipping_variant['small_pallet']['price']) {
-                  $left_weight_in_small_pallet_switch = $left_weight_in_small_pallet_start;
-                  $left_volume_in_small_pallet_switch = $left_volume_in_small_pallet_start;
-                  $need_small_pallet++;
-                  $need_courier_pack = 0;
-                  $courier_packet_items = $courier_packet_items_start;
+                $courier_price = $need_courier_pack * $this->shipping_variant['courier']['price'];
+                if ( $courier_price > $this->shipping_variant['small_pallet']['price']) {
+                  $replace_items = $already_placed_courier_items;
+                  $left_weight_in_courier_pack_replace = $left_weight_in_courier_pack_start;
+                  $left_volume_in_courier_pack_replace = $left_volume_in_courier_pack_start;
+
+                  while (count($replace_items) > 0) {
+                    //$test_mess .= count($replace_items).' - ';
+                    $put_in_small_pallet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_small_pallet_start, $left_volume_in_small_pallet_start, 'small_pallet');
+                    
+                    $replace_items = $put_in_small_pallet_replace_response['not_in_pack_items_array'];
+                    //$test_mess .= count($replace_items).' + ';
+
+                    if (count($put_in_small_pallet_replace_response['in_pack_items_array']) > 0) $replace_small_pallets++;
+
+                    if (count($replace_items) > 0) {
+
+                      $put_in_courier_packet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_courier_pack_replace, $left_volume_in_courier_pack_replace, 'courier');
+                      
+                      if (count($put_in_courier_packet_replace_response['in_pack_items_array']) > 0) $replace_courier_pack++;
+
+                      $left_weight_in_courier_pack_replace = $left_weight_in_courier_pack_start;
+                      //$put_in_courier_packet_replace_response['weight_left'];
+                      $left_volume_in_courier_pack_replace = $left_volume_in_courier_pack_start;
+                      //$put_in_courier_packet_replace_response['volume_left'];
+                      $replace_items = $put_in_courier_packet_replace_response['not_in_pack_items_array'];
+
+                      //$test_mess .= ' not in '. count($replace_items);
+                    }
+
+                  }
+
+                  $combo_price = $replace_courier_pack * $this->shipping_variant['courier']['price'] + $replace_small_pallets * $this->shipping_variant['small_pallet']['price'];
+
+                  if ($courier_price > $combo_price) {
+                    $need_small_pallet += $replace_small_pallets;
+                    $need_courier_pack = $replace_courier_pack;
+
+                    $left_weight_in_small_pallet_switch = $put_in_small_pallet_replace_response['weight_left'];
+                    $left_volume_in_small_pallet_switch = $put_in_small_pallet_replace_response['volume_left'];
+
+                    $courier_packet_items = $replace_items;//$courier_packet_items_start;
+                  } else {
+
+                  }
+
+
+                  //$left_weight_in_small_pallet_switch = $left_weight_in_small_pallet_start;
+                  //$left_volume_in_small_pallet_switch = $left_volume_in_small_pallet_start;
+                  //$need_small_pallet++;
+                  //$need_courier_pack = 0;
+                  //$courier_packet_items = $courier_packet_items_start;
                 }
               }
             }
+
+            $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_switch;
+            $left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_switch;
+
           }
 
         }
@@ -523,7 +599,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       $rate = array(
           //'id' => $this->id,
-          'label' => $this->title,
+          'label' => $this->title,//.$test_mess,
           'cost' => $total_shipping_price,//$total_shipping_price
           'taxes' => 'false',
       );
@@ -677,20 +753,29 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
   }*/
 
-    public function can_put_item_to_this_pack($product, $pack_type_name) {
+    public function can_put_item_to_this_pack2($product, $pack_type_name) {
       $shipping_variant = $this->shipping_variant[$pack_type_name];
       if ($product->get_weight() <= $shipping_variant['max_weight']) {
         $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
-        $package_sizes = array($shipping_variant['max_length'], $shipping_variant['max_width'], $shipping_variant['max_height']);
+        $package_sizes = array($shipping_variant['max_length']/10, $shipping_variant['max_width']/10, $shipping_variant['max_height']/10);
 
         for($k=1; $k <= 3; $k++) {
           if (($package_sizes[0] >= $product_sizes[0]) && ($package_sizes[1] >= $product_sizes[1]) && ($package_sizes[2] >= $product_sizes[2])) return true;
+
           $product_sizes = $this->shift_array_in_left($product_sizes);
         }
         
       }
 
       return false;
+    }
+
+    public function can_put_item_to_this_pack($product, $pack_type_name) {
+      $result = false;
+      if ($pack_type_name == 'courier') $result = $this->can_put_in_courier_package($product);
+      if ($pack_type_name == 'small_pallet') $result = $this->can_put_in_small_pallet($product);
+      if ($pack_type_name == 'big_pallet') $result = $this->can_put_in_big_pallet($product);
+      return $result;
     }
 
     public function shift_array_in_left ($arr) {
@@ -703,7 +788,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       
       if ($product->get_weight() <= $this->courier_max_weight) {
         $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
-        $package_sizes = array($this->courier_max_length, $this->courier_max_width, $this->courier_max_height);
+        $package_sizes = array($this->courier_max_length/10, $this->courier_max_width/10, $this->courier_max_height/10);
 
         for($k=1; $k <= 3; $k++) {
           if (($package_sizes[0] >= $product_sizes[0]) && ($package_sizes[1] >= $product_sizes[1]) && ($package_sizes[2] >= $product_sizes[2])) return true;
@@ -720,7 +805,24 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       
       if ($product->get_weight() <= $this->small_pallet_max_weight) {
         $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
-        $package_sizes = array($this->small_pallet_max_length, $this->small_pallet_max_width, $this->small_pallet_max_height);
+        $package_sizes = array($this->small_pallet_max_length/10, $this->small_pallet_max_width/10, $this->small_pallet_max_height/10);
+
+        for($k=1; $k <= 3; $k++) {
+          if (($package_sizes[0] >= $product_sizes[0]) && ($package_sizes[1] >= $product_sizes[1]) && ($package_sizes[2] >= $product_sizes[2])) return true;
+          $product_sizes = $this->shift_array_in_left($product_sizes);
+        }
+        
+      }
+
+      return false;
+      
+    }
+
+    public function can_put_in_big_pallet($product) {
+      
+      if ($product->get_weight() <= $this->big_pallet_max_weight) {
+        $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
+        $package_sizes = array($this->big_pallet_max_length/10, $this->big_pallet_max_width/10, $this->big_pallet_max_height/10);
 
         for($k=1; $k <= 3; $k++) {
           if (($package_sizes[0] >= $product_sizes[0]) && ($package_sizes[1] >= $product_sizes[1]) && ($package_sizes[2] >= $product_sizes[2])) return true;
@@ -806,7 +908,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         $item_details = $item['data'];
         $item_volume = ($item_details->get_width()/100) * ($item_details->get_height()/100) * ($item_details->get_length()/100);
         $can_put_item_to_this_pack = $this->can_put_item_to_this_pack($item_details, $pack_type_name);
-        if ((($weight_left - $item_details->get_weight()) >= 0) && ($volume_left - $item_volume) >= 0 && $can_put_item_to_this_pack) {
+        if ((($weight_left - $item_details->get_weight()) >= 0) && (($volume_left - $item_volume) >= 0) && $can_put_item_to_this_pack) {
           $in_pack_items_array[] = $item;
           $weight_left = $weight_left - $item_details->get_weight();
           $volume_left = $volume_left - $item_volume;
