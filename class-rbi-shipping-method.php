@@ -39,9 +39,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
         //START Weight Settings
 
-        $this->courier_max_weight = ( null !== get_option('rbi_courier_packet_max_weight') ) ? get_option('rbi_courier_packet_max_weight') : 0;
-        $this->small_pallet_max_weight = (null !== get_option('rbi_small_pallet_max_weight') ) ? get_option('rbi_small_pallet_max_weight') : 0;
-        $this->big_pallet_max_weight = ( null !== get_option('rbi_big_pallet_max_weight') ) ? get_option('rbi_big_pallet_max_weight') : 0;
+        $this->courier_max_weight = ( null !== get_option('rbi_courier_packet_max_weight') ) ? floatval(get_option('rbi_courier_packet_max_weight')) : 0;
+        $this->small_pallet_max_weight = (null !== get_option('rbi_small_pallet_max_weight') ) ? floatval(get_option('rbi_small_pallet_max_weight')) : 0;
+        $this->big_pallet_max_weight = ( null !== get_option('rbi_big_pallet_max_weight') ) ? floatval(get_option('rbi_big_pallet_max_weight')) : 0;
         //END Weight Settings
 
         //START Size Settings
@@ -306,17 +306,17 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $need_small_pallet = 0;
       $need_courier_pack = 0;
 
-      $left_weight_in_big_pallet_start = $this->shipping_variant['big_pallet']['max_weight'];
+      $left_weight_in_big_pallet_start = floatval($this->shipping_variant['big_pallet']['max_weight']);
 
       $left_volume_in_big_pallet_start = ($this->shipping_variant['big_pallet']['max_width']/1000) * ($this->shipping_variant['big_pallet']['max_height']/1000) * ($this->shipping_variant['big_pallet']['max_length']/1000);
 
-      $left_weight_in_small_pallet_start = $this->shipping_variant['small_pallet']['max_weight'];
+      $left_weight_in_small_pallet_start = floatval($this->shipping_variant['small_pallet']['max_weight']);
 
 
       $left_volume_in_small_pallet_start = ($this->shipping_variant['small_pallet']['max_width']/1000) * ($this->shipping_variant['small_pallet']['max_height']/1000) * ($this->shipping_variant['small_pallet']['max_length']/1000);
 
 
-      $left_weight_in_courier_pack = $this->shipping_variant['courier']['max_weight'];
+      $left_weight_in_courier_pack = floatval($this->shipping_variant['courier']['max_weight']);
       $left_weight_in_courier_pack_start = $left_weight_in_courier_pack;
 
 
@@ -755,7 +755,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
     public function can_put_item_to_this_pack2($product, $pack_type_name) {
       $shipping_variant = $this->shipping_variant[$pack_type_name];
-      if ($product->get_weight() <= $shipping_variant['max_weight']) {
+      if (floatval($product->get_weight()) <= $shipping_variant['max_weight']) {
         $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
         $package_sizes = array($shipping_variant['max_length']/10, $shipping_variant['max_width']/10, $shipping_variant['max_height']/10);
 
@@ -786,7 +786,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
     public function can_put_in_courier_package($product) {
       
-      if ($product->get_weight() <= $this->courier_max_weight) {
+      if (floatval($product->get_weight()) <= $this->courier_max_weight) {
         $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
         $package_sizes = array($this->courier_max_length/10, $this->courier_max_width/10, $this->courier_max_height/10);
 
@@ -803,7 +803,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
     public function can_put_in_small_pallet($product) {
       
-      if ($product->get_weight() <= $this->small_pallet_max_weight) {
+      if (floatval($product->get_weight()) <= $this->small_pallet_max_weight) {
         $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
         $package_sizes = array($this->small_pallet_max_length/10, $this->small_pallet_max_width/10, $this->small_pallet_max_height/10);
 
@@ -820,7 +820,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
     public function can_put_in_big_pallet($product) {
       
-      if ($product->get_weight() <= $this->big_pallet_max_weight) {
+      if (floatval($product->get_weight()) <= $this->big_pallet_max_weight) {
         $product_sizes = array($product->get_length(), $product->get_width(), $product->get_height());
         $package_sizes = array($this->big_pallet_max_length/10, $this->big_pallet_max_width/10, $this->big_pallet_max_height/10);
 
@@ -908,7 +908,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         $item_details = $item['data'];
         $item_volume = ($item_details->get_width()/100) * ($item_details->get_height()/100) * ($item_details->get_length()/100);
         $can_put_item_to_this_pack = $this->can_put_item_to_this_pack($item_details, $pack_type_name);
-        if ((($weight_left - $item_details->get_weight()) >= 0) && (($volume_left - $item_volume) >= 0) && $can_put_item_to_this_pack) {
+        if ((($weight_left - floatval($item_details->get_weight())) >= 0) && (($volume_left - $item_volume) >= 0) && $can_put_item_to_this_pack) {
           $in_pack_items_array[] = $item;
           $weight_left = $weight_left - $item_details->get_weight();
           $volume_left = $volume_left - $item_volume;
@@ -959,7 +959,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         $product_volume =  ($one_product->get_width()/100) * ($one_product->get_height()/100) * ($one_product->get_length()/100);
         //if product dont have parameters
         if ($product_volume == 0) $product_volume = 0.000001;
-        $product_weight = $one_product->get_weight();
+        $product_weight = floatval($one_product->get_weight());
         $one_value['weight_volume_rate'] = $product_weight/$product_volume;
         $new_products[] = $one_value;
       }
