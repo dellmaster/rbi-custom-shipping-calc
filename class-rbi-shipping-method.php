@@ -283,6 +283,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
 
       }
+      $add_mess .= ' count_products_cp='.count($courier_packet_products);
+      $add_mess .= ' count_products_sp='.count($small_pallet_products);
       //$debug_mess .= '<br />'.'big pr-'.count($big_pallet_products);
       //$debug_mess .= '<br />'.'small pr-'.count($small_pallet_products);
       //$debug_mess .= '<br />'.'courier pr-'.count($courier_packet_products);
@@ -293,6 +295,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $small_pallet_items = $this->products_weight_and_volume_rate($this->create_items_array($small_pallet_products));
       $courier_packet_items = $this->products_weight_and_volume_rate($this->create_items_array($courier_packet_products));
       $separate_shipping_cost_items = $this->create_items_array($separate_shipping_cost_products);
+
+      $add_mess .= ' count_items_cp='.count($courier_packet_items);
+      $add_mess .= ' count_items_sp='.count($small_pallet_items);
 
       $already_placed_courier_items = array();
 
@@ -403,6 +408,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $left_weight_in_small_pallet = 0;
           $left_volume_in_small_pallet = 0;
         }
+        $add_mess .= ' need_small_pallet='.$need_small_pallet;
+        $add_mess .= ' count_sp_products='.count($small_pallet_items);
 
 
         if (count($courier_packet_items) > 0) {
@@ -421,6 +428,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
             $left_volume_in_small_pallet_switch = 0;
 
+            $add_mess .= ' count_c_products_before_sp='.count($courier_packet_items);
+
             // if courier items left then 2nd step put courier items to small pallet free space
             $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
             $put_in_small_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_weight, $left_weight_in_small_pallet, $left_volume_in_small_pallet, 'small_pallet');
@@ -428,17 +437,21 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
             $courier_packet_items = $put_in_small_pallet_response['not_in_pack_items_array'];
 
+            $add_mess .= ' count_c_products_after_sp='.count($courier_packet_items);
+
 
             if (count($courier_packet_items) > 0) {
 
               // if courier items left then 3rd step put courier items to courier packet
-              //$courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
-              $put_in_courier_packet_response = $this->put_products_in_volume_and_weight($courier_packet_items, $left_weight_in_courier_pack, $left_volume_in_courier_pack, 'courier');
+              $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
+              $put_in_courier_packet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_weight, $left_weight_in_courier_pack, $left_volume_in_courier_pack, 'courier');
 
               //remember start items array
-              if ($need_courier_pack == 0) $courier_packet_items_start = $courier_packet_items;
+              //if ($need_courier_pack == 0) $courier_packet_items_start = $courier_packet_items;
 
               $courier_packet_items = $put_in_courier_packet_response['not_in_pack_items_array'];
+
+              $add_mess .= ' count_c_products_after_cp='.count($courier_packet_items);
 
               foreach ($put_in_courier_packet_response['in_pack_items_array'] as $item) {
 
@@ -446,68 +459,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
               }
 
-
-               
-
               if (count($put_in_courier_packet_response['in_pack_items_array']) > 0) {
                 $need_courier_pack++;
-                $replace_small_pallets = 0;
-                $replace_courier_pack = 0;
 
-                $courier_price = $need_courier_pack * $this->shipping_variant['courier']['price'];
-                if ( $courier_price > $this->shipping_variant['small_pallet']['price']) {
-                  $replace_items = $already_placed_courier_items;
-                  $left_weight_in_courier_pack_replace = $left_weight_in_courier_pack_start;
-                  $left_volume_in_courier_pack_replace = $left_volume_in_courier_pack_start;
-
-                  while (count($replace_items) > 0) {
-                    //$test_mess .= count($replace_items).' - ';
-                    $put_in_small_pallet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_small_pallet_start, $left_volume_in_small_pallet_start, 'small_pallet');
-                    
-                    $replace_items = $put_in_small_pallet_replace_response['not_in_pack_items_array'];
-                    //$test_mess .= count($replace_items).' + ';
-
-                    if (count($put_in_small_pallet_replace_response['in_pack_items_array']) > 0) $replace_small_pallets++;
-
-                    if (count($replace_items) > 0) {
-
-                      $put_in_courier_packet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_courier_pack_replace, $left_volume_in_courier_pack_replace, 'courier');
-                      
-                      if (count($put_in_courier_packet_replace_response['in_pack_items_array']) > 0) $replace_courier_pack++;
-
-                      $left_weight_in_courier_pack_replace = $left_weight_in_courier_pack_start;
-                      //$put_in_courier_packet_replace_response['weight_left'];
-                      $left_volume_in_courier_pack_replace = $left_volume_in_courier_pack_start;
-                      //$put_in_courier_packet_replace_response['volume_left'];
-                      $replace_items = $put_in_courier_packet_replace_response['not_in_pack_items_array'];
-
-                      //$test_mess .= ' not in '. count($replace_items);
-                    }
-
-                  }
-
-                  $combo_price = $replace_courier_pack * $this->shipping_variant['courier']['price'] + $replace_small_pallets * $this->shipping_variant['small_pallet']['price'];
-
-                  if ($courier_price > $combo_price) {
-                    $need_small_pallet += $replace_small_pallets;
-                    $need_courier_pack = $replace_courier_pack;
-
-                    $left_weight_in_small_pallet_switch = $put_in_small_pallet_replace_response['weight_left'];
-                    $left_volume_in_small_pallet_switch = $put_in_small_pallet_replace_response['volume_left'];
-
-                    $courier_packet_items = $replace_items;//$courier_packet_items_start;
-                  } else {
-
-                  }
-
-
-                  //$left_weight_in_small_pallet_switch = $left_weight_in_small_pallet_start;
-                  //$left_volume_in_small_pallet_switch = $left_volume_in_small_pallet_start;
-                  //$need_small_pallet++;
-                  //$need_courier_pack = 0;
-                  //$courier_packet_items = $courier_packet_items_start;
-                }
               }
+
             }
 
             $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_switch;
@@ -523,6 +479,71 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
         $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
       }
+
+      //========================================================
+      //======START recount if we have to many courier pack ====
+      //===== try to find cheaper combination small pallets ====
+      //===== and courier packages for this order ==============
+      //========================================================
+
+      $replace_small_pallets = 0;
+      $replace_courier_pack = 0;
+
+      $courier_price = $need_courier_pack * $this->shipping_variant['courier']['price'];
+      $step_price = 0;
+      $prev_step_price = $courier_price;
+      
+      $replace_items = $already_placed_courier_items;
+
+      if ( $courier_price > $this->shipping_variant['small_pallet']['price']) {
+        while ($prev_step_price >= $step_price) {
+          
+          $prev_step_courier_pack = $replace_courier_pack;
+          $prev_step_small_pallets = $replace_small_pallets;
+          $prev_step_price = $step_price;
+
+          $put_in_small_pallet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_small_pallet_start, $left_volume_in_small_pallet_start, 'small_pallet');
+            
+          $replace_items = $put_in_small_pallet_replace_response['not_in_pack_items_array'];
+
+          if (count($put_in_small_pallet_replace_response['in_pack_items_array']) > 0) $replace_small_pallets++;
+
+          $to_cp_items = $replace_items;
+
+          while (count($replace_items) > 0) {
+
+            $put_in_courier_packet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_courier_pack_start, $left_volume_in_courier_pack_start, 'courier');
+
+            if (count($put_in_courier_packet_replace_response['in_pack_items_array']) > 0) $replace_courier_pack++;
+
+            //$put_in_courier_packet_replace_response['volume_left'];
+            $replace_items = $put_in_courier_packet_replace_response['not_in_pack_items_array'];
+
+          }
+
+          $replace_items = $to_cp_items;
+          
+          $step_price = $replace_courier_pack * $this->shipping_variant['courier']['price'] + $replace_small_pallets * $this->shipping_variant['small_pallet']['price'];
+
+
+        }
+        
+        $replace_courier_pack = $prev_step_courier_pack;
+        $replace_small_pallets = $prev_step_small_pallets;
+        $need_small_pallet += $replace_small_pallets;
+        $need_courier_pack = $replace_courier_pack;
+        
+      }
+
+
+
+
+
+      //========================================================
+      //======END recount if we have to many courier pack ======
+      //========================================================
+
+
 
       //========================================================
       //=====START Separate Shipping Price products (shp)=======
@@ -599,7 +620,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       $rate = array(
           //'id' => $this->id,
-          'label' => $this->title,//.$test_mess,
+          'label' => $this->title.$add_mess,//.$add_mess,
           'cost' => $total_shipping_price,//$total_shipping_price
           'taxes' => 'false',
       );
