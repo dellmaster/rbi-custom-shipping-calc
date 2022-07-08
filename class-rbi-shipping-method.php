@@ -500,7 +500,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         //while ($prev_step_price >= $step_price) {
         while (!$out) {
           
-          $prev_step_courier_pack = $replace_courier_pack;
+          //$prev_step_courier_pack = $replace_courier_pack;
           //$prev_step_small_pallets = $replace_small_pallets;
           //$prev_step_price = $step_price;
 
@@ -539,11 +539,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $add_mess2 .= '|rsp='.$replace_small_pallets;
           $add_mess2 .= '|rcp='.$replace_courier_pack;
 
-          if($prev_step_price < $step_price) {
+          if($prev_step_price <= $step_price) {
             $add_mess2 .= '|prev_step_price less step_price|';
 
-            $replace_courier_pack = $prev_step_courier_pack;
-            $replace_small_pallets = $replace_small_pallets - $prev_step_small_pallets;
+            //$replace_courier_pack = $prev_step_courier_pack;
+            //$replace_small_pallets = $replace_small_pallets - $prev_step_small_pallets;
             
             $out = true;
 
