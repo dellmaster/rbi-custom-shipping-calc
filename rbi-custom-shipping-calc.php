@@ -3,7 +3,7 @@
  * Plugin Name: RBI Custom Shipping Calculator
  * Plugin URI: //runbyit.com/
  * Description: Custom Shipping Calculator for WooCommerce
- * Version: 6.9.1
+ * Version: 7.1.1
  * Author: Oleksii Yurchenko
  * Author URI: //runbyit.com/
  */

@@ -161,7 +161,15 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         'courier' => 0
       );
 
+      // product matrix defination
+      $items_matrix = array(
+        'courier' => array(),
+        'small_pallet' => array(),
+        'big_pallet' => array(),
+      );
+
       //Prepare arrays for pruducts by category
+      $courier_only_packet_products = array();
       $courier_packet_products = array();
       $small_pallet_products = array();
       $big_pallet_products = array();
@@ -221,29 +229,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $product_all_categories = $one_product->get_category_ids();
         }
 
-        //$product_all_categories = $one_product->get_category_ids();
-        //$test_mess = print_r($one_product->parent_id, true);
-        //$test_mess .= '--';
-        //$test_mess .= print_r($product_all_categories, true);
         foreach ($product_all_categories as $category) {
           if ($category == $free_cat_id) $free_shipping_product = true;
         }
 
-        /*if ($free_shipping_product && $have_free_shipping) {
-          $free_shipping_products = $values;
-        }
-        elseif ($product_max_size > $this->small_pallet_max_length) {
-          //need big pallet
-          $big_pallet_products[] = $values;
-        }
-        elseif($product_max_size > $this->courier_max_length) {
-          //need small pallet
-          $small_pallet_products[] = $values;
-        }
-        else {
-          // all other products we put in courier box
-          $courier_packet_products[] = $values;
-        }*/
         
         $separate_sipping_array_by_categorie = array();
         $separate_sipping_array_by_categorie = array_intersect($product_all_categories, $separate_sipping_cost_array);
@@ -270,7 +259,14 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         }
         elseif ($this->can_put_in_courier_package($one_product)) {
           //can put it to courier package
-          $courier_packet_products[] = $values;
+          
+          if ($this->can_put_in_small_pallet($one_product) || $this->can_put_in_big_pallet($one_product)) {
+            $courier_packet_products[] = $values;
+          }
+          else {
+            $courier_only_packet_products[] = $values;
+          }
+
         }
         elseif($this->can_put_in_small_pallet($one_product)) {
           //can put it to small pallet
@@ -295,6 +291,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $small_pallet_items = $this->products_weight_and_volume_rate($this->create_items_array($small_pallet_products));
       $courier_packet_items = $this->products_weight_and_volume_rate($this->create_items_array($courier_packet_products));
       $separate_shipping_cost_items = $this->create_items_array($separate_shipping_cost_products);
+      $courier_only_packet_items = $this->create_items_array($courier_only_packet_products);
 
       $add_mess .= ' count_items_cp='.count($courier_packet_items);
       $add_mess .= ' count_items_sp='.count($small_pallet_items);
@@ -332,30 +329,47 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       $left_weight_in_shp = $left_weight_in_courier_pack;
       $left_volume_in_shp = $left_volume_in_courier_pack;
 
-      //$left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
-      //$left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
+      $left_weight_in_big_pallet = 0;
+      $left_volume_in_big_pallet = 0;
 
-      //$left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
-      //$left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
+      $left_weight_in_small_pallet = 0;
+      $left_volume_in_small_pallet = 0;
 
       $left_weight_in_small_pallet_switch = 0;
       $left_volume_in_small_pallet_switch = 0;
 
+      //================================================================
+      //============= START shipping cost calculation ==================
+      //================================================================
+
       while ($total_items_left > 0) {
-        //$debug_mess .= '/n'.'items left';
-        //$left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
-        //$left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
 
-        //$left_weight_in_small_pallet = $left_weight_in_small_pallet_start;
-        //$left_volume_in_small_pallet = $left_volume_in_small_pallet_start;
+        if (($left_weight_in_big_pallet > 0) &&($left_volume_in_big_pallet > 0)) {
+          $free_space_in_big_pallet = true;
+        } else {
+          $free_space_in_big_pallet = false;
+        };
 
-        if (count($big_pallet_items)>0){
+        if (($left_weight_in_small_pallet > 0) &&($left_volume_in_small_pallet > 0)) {
+          $free_space_in_small_pallet = true;
+        } else {
+          $free_space_in_small_pallet = false;
+        };
 
-          $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
-          $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
-          
-          //$debug_mess .= '/n'.'big items';
-          //if we have big pallet items - put it at big pallet
+        if (($left_weight_in_courier_pack > 0) &&($left_volume_in_courier_pack > 0)) {
+          $free_space_in_courier_pack = true;
+        } else {
+          $free_space_in_courier_pack = false;
+        };
+
+
+        if (count($big_pallet_items)>0 ) {
+
+          if ($need_big_pallet = 0) {
+            $left_weight_in_big_pallet = $left_weight_in_big_pallet_start;
+            $left_volume_in_big_pallet = $left_volume_in_big_pallet_start;
+          }
+
           $big_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($big_pallet_items);
           $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($big_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet, 'big_pallet');
 
@@ -363,29 +377,46 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $left_weight_in_big_pallet = $put_in_big_pallet_response['weight_left'];
           $left_volume_in_big_pallet = $put_in_big_pallet_response['volume_left'];
 
-          if (count($put_in_big_pallet_response['in_pack_items_array']) > 0) $need_big_pallet++;
+          if (count($put_in_big_pallet_response['in_pack_items_array']) > 0) {
+            $need_big_pallet++;
+            //put in matrix items which are on big pallet
+
+            $items_matrix['big_pallet'] = $this->add_items_to_array($items_matrix['big_pallet'], $put_in_big_pallet_response['in_pack_items_array']);
+          }
           //if we put some products at the big pallet increase it
 
         }
         else {
           //if we dont use big pallet - we dont have space on it
-          $left_weight_in_big_pallet = 0;
-          $left_volume_in_big_pallet = 0;
+          //$left_weight_in_big_pallet = 0;
+          //$left_volume_in_big_pallet = 0;
         }
 
         if (count($small_pallet_items) > 0) {
           //if we have small pallet items then 1st step put it on big pallet free space
+          
           $small_pallet_items_sort_more_volume = $this->sort_products_put_more_volume($small_pallet_items);
           $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($small_pallet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet, 'big_pallet');
 
           $small_pallet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
           $left_weight_in_big_pallet = $put_in_big_pallet_response['weight_left'];
           $left_volume_in_big_pallet = $put_in_big_pallet_response['volume_left'];
+          
+          if (count($put_in_big_pallet_response['in_pack_items_array']) > 0) {
+            //put in matrix items which are on big pallet
+            //$items_matrix['big_pallet'][$need_big_pallet] = $put_in_big_pallet_response['in_pack_items_array'];
+            $items_matrix['big_pallet'] = $this->add_items_to_array($items_matrix['big_pallet'], $put_in_big_pallet_response['in_pack_items_array']);
+          }
 
           if (count($small_pallet_items) > 0) {
 
-            $left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_start;
-            $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_start;
+            //$left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_start;
+            //$left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_start;
+
+            if ($need_small_pallet = 0) {
+              $left_weight_in_small_pallet =  $left_weight_in_small_pallet_start;
+              $left_volume_in_small_pallet =  $left_volume_in_small_pallet_start;
+            }
 
             //if small pallet products left -  then 2nd step put it on small pallet free space
             $small_pallet_items_sort_more_weight = $this->sort_products_put_more_weight($small_pallet_items);
@@ -396,7 +427,11 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
             $left_volume_in_small_pallet = $put_in_small_pallet_response['volume_left'];
 
             if (count($put_in_small_pallet_response['in_pack_items_array']) > 0) {
+              
               $need_small_pallet++;
+              //put in matrix items which are on small pallet
+              //$items_matrix['small_pallet'][$need_small_pallet] = $put_in_small_pallet_response['in_pack_items_array'];
+              $items_matrix['small_pallet'] = $this->add_items_to_array($items_matrix['small_pallet'], $put_in_small_pallet_response['in_pack_items_array']);
 
             }
             //if we put some products to small pallet - increase it
@@ -405,8 +440,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         }
         else {
           //if we dont use small pallet - we dont have space on it
-          $left_weight_in_small_pallet = 0;
-          $left_volume_in_small_pallet = 0;
+          //$left_weight_in_small_pallet = 0;
+          //$left_volume_in_small_pallet = 0;
         }
         $add_mess .= ' need_small_pallet='.$need_small_pallet;
         $add_mess .= ' count_sp_products='.count($small_pallet_items);
@@ -418,8 +453,14 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           $put_in_big_pallet_response = $this->put_products_in_volume_and_weight($courier_packet_items_sort_more_volume, $left_weight_in_big_pallet, $left_volume_in_big_pallet, 'big_pallet');
 
           $courier_packet_items = $put_in_big_pallet_response['not_in_pack_items_array'];
-          //$left_weight_in_big_pallet = $put_in_small_pallet_response['weight_left'];
-          //$left_volume_in_big_pallet = $put_in_small_pallet_response['volume_left'];
+          $left_weight_in_big_pallet = $put_in_big_pallet_response['weight_left'];
+          $left_volume_in_big_pallet = $put_in_big_pallet_response['volume_left'];
+
+          if (count($put_in_big_pallet_response['in_pack_items_array']) > 0) {
+            //put in matrix items which are on big pallet
+            //$items_matrix['big_pallet'][$need_big_pallet] = $put_in_big_pallet_response['in_pack_items_array'];
+            $items_matrix['big_pallet'] = $this->add_items_to_array($items_matrix['big_pallet'], $put_in_big_pallet_response['in_pack_items_array']);
+          }
 
 
           if (count($courier_packet_items) > 0) {
@@ -428,7 +469,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
             $left_volume_in_small_pallet_switch = 0;
 
-            $add_mess .= ' count_c_products_before_sp='.count($courier_packet_items);
+            $add_mess3 .= ' |count_c_products_before_sp='.count($courier_packet_items);
 
             // if courier items left then 2nd step put courier items to small pallet free space
             $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
@@ -436,11 +477,24 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
 
             $courier_packet_items = $put_in_small_pallet_response['not_in_pack_items_array'];
+            $left_weight_in_small_pallet = $put_in_small_pallet_response['weight_left'];
+            $left_volume_in_small_pallet = $put_in_small_pallet_response['volume_left'];
 
-            $add_mess .= ' count_c_products_after_sp='.count($courier_packet_items);
+            $add_mess3 .= ' |count_c_products_after_sp='.count($courier_packet_items);
+
+            if (count($put_in_small_pallet_response['in_pack_items_array']) > 0) {
+          
+              //put in matrix items which are on small pallet
+              //$items_matrix['small_pallet'][$need_small_pallet] = $put_in_small_pallet_response['in_pack_items_array'];
+              $items_matrix['small_pallet'] = $this->add_items_to_array($items_matrix['small_pallet'], $put_in_small_pallet_response['in_pack_items_array']);
+
+            }
 
 
             if (count($courier_packet_items) > 0) {
+
+              $left_weight_in_courier_pack = $left_weight_in_courier_pack_start;
+              $left_volume_in_courier_pack = $left_volume_in_courier_pack_start;
 
               // if courier items left then 3rd step put courier items to courier packet
               $courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
@@ -450,6 +504,9 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
               //if ($need_courier_pack == 0) $courier_packet_items_start = $courier_packet_items;
 
               $courier_packet_items = $put_in_courier_packet_response['not_in_pack_items_array'];
+
+              $left_weight_in_courier_pack = $put_in_courier_packet_response['weight_left'];
+              $left_volume_in_courier_pack = $put_in_courier_packet_response['volume_left'];
 
               $add_mess .= ' count_c_products_after_cp='.count($courier_packet_items);
 
@@ -461,13 +518,16 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
               if (count($put_in_courier_packet_response['in_pack_items_array']) > 0) {
                 $need_courier_pack++;
+                $items_matrix['courier_pack'] = $this->add_items_to_array($items_matrix['courier_pack'], $put_in_courier_packet_response['in_pack_items_array']);
+
+                
 
               }
 
             }
 
-            $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_switch;
-            $left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_switch;
+            //$left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_switch;
+            //$left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_switch;
 
           }
 
@@ -477,105 +537,122 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         }
 
 
-        $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
-      }
+        
 
-      //========================================================
-      //======START recount if we have to many courier pack ====
-      //===== try to find cheaper combination small pallets ====
-      //===== and courier packages for this order ==============
-      //========================================================
+        // Check shipping cost for current packages combination
+        $courier_price = $need_courier_pack * $this->shipping_variant['courier']['price'];
+        $big_pallet_price = $need_big_pallet * $this->shipping_variant['big_pallet']['price'];
+        
+        $add_mess3 .= ' |need_small_pallet='.$need_small_pallet;
+        $add_mess3 .= ' |need_big_pallet='.$need_big_pallet;
+        $add_mess3 .= ' |need_courier_pack='.$need_courier_pack;
 
-      $replace_small_pallets = 0;
-      $replace_courier_pack = $need_courier_pack;
-
-      $courier_price = $need_courier_pack * $this->shipping_variant['courier']['price'];
-      $step_price = $courier_price;
-      $prev_step_price = $courier_price;
-      
-      $replace_items = $already_placed_courier_items;
-
-      if ( $courier_price > $this->shipping_variant['small_pallet']['price']) {
-        $out = false;
-        //while ($prev_step_price >= $step_price) {
-        while (!$out) {
+        if($courier_price > $this->shipping_variant['small_pallet']['price']) {
+          $repac_response_courier_items = array();
+          $repack_need_courier_pack = 0;
+          $repack_need_small_pallet = 0;
           
-          //$prev_step_courier_pack = $replace_courier_pack;
-          //$prev_step_small_pallets = $replace_small_pallets;
-          //$prev_step_price = $step_price;
+          $repack_courier_packet_items = $items_matrix['courier_pack'];
 
-          $put_in_small_pallet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_small_pallet_start, $left_volume_in_small_pallet_start, 'small_pallet');
+          $repack_put_in_small_pallet_response = $this->put_products_in_volume_and_weight($repack_courier_packet_items, $left_weight_in_small_pallet_start, $left_volume_in_small_pallet_start, 'small_pallet');
+          $repack_courier_packet_items = $repack_put_in_small_pallet_response['not_in_pack_items_array'];
+          if (count($repack_put_in_small_pallet_response['in_pack_items_array']) > 0) $repack_need_small_pallet++;
+
+          if (count($repack_courier_packet_items) > 0) {
+            while(count($repack_courier_packet_items) > 0) {
+              $repack_put_in_courier_response = $this->put_products_in_volume_and_weight($repack_courier_packet_items, $left_weight_in_courier_pack_start, $left_volume_in_courier_pack_start, 'courier');
+
+              $repack_courier_packet_items = $repack_put_in_courier_response['not_in_pack_items_array'];
+              if (count($repack_put_in_courier_response['in_pack_items_array']) > 0) {
+                $repack_need_courier_pack++;
+              }
+              $repac_response_courier_items = $this->add_items_to_array($repac_response_courier_items, $repack_put_in_courier_response['in_pack_items_array']);
+            }
+          }
+
+          if (($repack_need_courier_pack * $this->shipping_variant['courier']['price'] + $repack_need_small_pallet * $this->shipping_variant['small_pallet']['price'] ) < $courier_price) {
+            $items_matrix['small_pallet'] = $this->add_items_to_array($items_matrix['small_pallet'], $repack_put_in_small_pallet_response['in_pack_items_array']);
+            $need_small_pallet++;
+
+            $left_weight_in_small_pallet = $repack_put_in_small_pallet_response['weight_left'];
+            $left_volume_in_small_pallet = $repack_put_in_small_pallet_response['volume_left'];
+
+
+
+            $items_matrix['courier_pack'] = $this->add_items_to_array($items_matrix['courier_pack'], $repack_put_in_courier_response['in_pack_items_array']);
+            $need_courier_pack = $repack_need_courier_pack;
+
+            if($repack_need_courier_pack > 0) {
+              $left_weight_in_courier_pack = $repack_put_in_courier_response['weight_left'];
+              $left_volume_in_courier_pack = $repack_put_in_courier_response['volume_left'];
+            }
             
-          $replace_items = $put_in_small_pallet_replace_response['not_in_pack_items_array'];
-
-          if (count($put_in_small_pallet_replace_response['in_pack_items_array']) > 0) {
-            $replace_small_pallets++;
-            $replace_courier_pack = 0;
-            $prev_step_small_pallets = 1;
-          }
-          else {
-            $prev_step_small_pallets = 0;
-          }
-
-          $to_cp_items = $replace_items;
-
-          while (count($replace_items) > 0) {
-
-            $put_in_courier_packet_replace_response = $this->put_products_in_volume_and_weight($replace_items, $left_weight_in_courier_pack_start, $left_volume_in_courier_pack_start, 'courier');
-
-            if (count($put_in_courier_packet_replace_response['in_pack_items_array']) > 0) $replace_courier_pack++;
-
-            $replace_items = $put_in_courier_packet_replace_response['not_in_pack_items_array'];
 
           }
 
-          $replace_items = $to_cp_items;
-
-          $prev_step_price = $step_price;
-
-          $step_price = $replace_courier_pack * $this->shipping_variant['courier']['price'] + $replace_small_pallets * $this->shipping_variant['small_pallet']['price'];
-
-          $add_mess2 .= $prev_step_price.' and '.$step_price ;
-          $add_mess2 .= '|rsp='.$replace_small_pallets;
-          $add_mess2 .= '|rcp='.$replace_courier_pack;
-
-          if($prev_step_price <= $step_price) {
-            $add_mess2 .= '|prev_step_price less step_price|';
-
-            //$replace_courier_pack = $prev_step_courier_pack;
-            //$replace_small_pallets = $replace_small_pallets - $prev_step_small_pallets;
-            
-            $out = true;
-
-            //$step_price = '100000';
-            
-            
+        
+          /*
+          if(count($put_in_small_pallet_response['not_in_pack_items_array']) == 0) {
+            $need_small_pallet++;
+            $left_volume_in_small_pallet = $left_volume_in_small_pallet + $left_volume_in_small_pallet_start;
+            $left_weight_in_small_pallet = $left_weight_in_small_pallet + $left_weight_in_small_pallet_start;
+            $courier_packet_items = $this->add_items_to_array($courier_packet_items, $items_matrix['courier_pack']);
+            $items_matrix['courier_pack'] = array();
+            $need_courier_pack = 0;
           }
-          else {
-            //$replace_courier_pack = $prev_step_courier_pack;
-            //$replace_small_pallets = $replace_small_pallets - $prev_step_small_pallets;
-            $out_courier = $replace_courier_pack;
-            $out_small_pallet = $replace_small_pallets;
-            $add_mess2 .= '|prev_step_price more step_price|';
-          }
+          */
+
+        }
+
+        $small_pallet_price = $need_small_pallet * $this->shipping_variant['small_pallet']['price'];
+        $courier_price = $need_courier_pack * $this->shipping_variant['courier']['price'];
+        
+        if ((($courier_price + $small_pallet_price)) > $this->shipping_variant['big_pallet']['price']) {
+          $need_big_pallet++; //
+          $left_weight_in_big_pallet = $left_weight_in_big_pallet + $left_weight_in_big_pallet_start;
+          $left_volume_in_big_pallet = $left_volume_in_big_pallet + $left_volume_in_big_pallet_start;
+          $courier_packet_items = $this->add_items_to_array($courier_packet_items, $items_matrix['courier_pack']);
+          $items_matrix['courier_pack'] = array();
+          $small_pallet_items = $this->add_items_to_array($small_pallet_items, $items_matrix['small_pallet']);
+          $items_matrix['small_pallet'] = array();
+          $need_courier_pack = 0;
+          $need_small_pallet = 0;
         }
 
         
-        $need_small_pallet += $out_small_pallet;//$replace_small_pallets;
-        
+        $add_mess3 .= ' |need_small_pallet_after='.$need_small_pallet;
+        $add_mess3 .= ' |need_big_pallet_after='.$need_big_pallet;
+        $add_mess3 .= ' |need_courier_pack_after='.$need_courier_pack;
 
-        $add_mess2 .= '|fsp='.$need_small_pallet;
-        
+        $total_items_left = count($big_pallet_items) + count($small_pallet_items) + count($courier_packet_items);
+      }
 
+      //================================================================
+      //=============== END shipping cost calculation ==================
+      //================================================================
 
-        if(($out_courier + $out_small_pallet) > 0 ) $need_courier_pack = $out_courier;
+      //========================================================
+      //====== START count courier packages for item which =====
+      //========= can be shipped only by courier package =======
+      //========================================================
 
-        $add_mess2 .= '|fcp='.$need_courier_pack;
+      while (count($courier_only_packet_items) > 0) {
+        //$courier_packet_items_sort_more_weight = $this->sort_products_put_more_weight($courier_packet_items);
+        $put_in_courier_only_packet_response = $this->put_products_in_volume_and_weight($courier_only_packet_items, $left_weight_in_courier_pack, $left_volume_in_courier_pack, 'courier');
+
+        $courier_only_packet_items = $put_in_courier_only_packet_response['not_in_pack_items_array'];
+
+        if (count($courier_only_packet_items) > 0) {
+          $need_courier_only_pack++;
+          $left_weight_in_courier_pack = $left_weight_in_courier_pack_start;
+          $left_volume_in_courier_pack = $left_volume_in_courier_pack_start;
+        }
 
       }
 
       //========================================================
-      //======END recount if we have to many courier pack ======
+      //====== END count courier packages for item which =======
+      //========= can be shipped only by courier package =======
       //========================================================
 
 
@@ -645,7 +722,10 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
         'small_pallet' => $need_small_pallet,
         'courier' => $need_courier_pack
       );
-      $total_shipping_price = $need_big_pallet * $this->shipping_variant['big_pallet']['price'] + $need_small_pallet * $this->shipping_variant['small_pallet']['price'] + $need_courier_pack * $this->shipping_variant['courier']['price'] + $separate_shipping_total_price;
+
+      $courier_only_shipping_price = $need_courier_only_pack * $this->shipping_variant['courier']['price'];
+
+      $total_shipping_price = $need_big_pallet * $this->shipping_variant['big_pallet']['price'] + $need_small_pallet * $this->shipping_variant['small_pallet']['price'] + $need_courier_pack * $this->shipping_variant['courier']['price'] + $separate_shipping_total_price + $courier_only_shipping_price;
       //$total_shipping_price = $this->shipping_variant['small_pallet']['price'];
       /*$rate = array(
           'id' => $this->id,
@@ -655,7 +735,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
       $rate = array(
           //'id' => $this->id,
-          'label' => $this->title,//.$add_mess,
+          'label' => $this->title,//.$add_mess, .$add_mess3
           'cost' => $total_shipping_price,//$total_shipping_price
           'taxes' => 'false',
       );
@@ -771,6 +851,13 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 /////////////// Functions  ////////////////////////////
 ///////////////////////////////////////////////////////
   
+    public function add_items_to_array($array, $new_items_array){
+      foreach ($new_items_array as $item) {
+        $array[] = $item;
+      }
+      return $array;
+    }
+
   public function get_max_shipping_price($items) {
 
     $shp_price_array = array();
