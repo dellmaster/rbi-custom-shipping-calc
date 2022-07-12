@@ -734,7 +734,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       );*/
 
       $rate = array(
-          //'id' => $this->id,
+          'id' => $this->id,
           'label' => $this->title,//.$add_mess, .$add_mess3
           'cost' => $total_shipping_price,//$total_shipping_price
           'taxes' => 'false',
