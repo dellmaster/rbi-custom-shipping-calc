@@ -26,7 +26,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
             'title' 		=> __( 'Method Title' ),
             'type' 			=> 'text',
             'description' 	=> __( 'This controls the title which the user sees during checkout.' ),
-            'default'		=> __( 'Koszt wysyłki' ),
+            'default'		=> 'Koszt wysyłki',
             'desc_tip'		=> true
           )
         );
@@ -40,11 +40,12 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
 
         $this->init();
 
-        $this->enabled = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'yes';
-        $this->title = isset( $this->settings['title'] ) ? $this->settings['title'] : __( 'Combined Shipping', 'rbi_shipping' );
+        $this->enabled = ( null !== $this->settings['enabled'] ) ? $this->settings['enabled'] : 'yes';
+        //$this->title = ( null !== $this->settings['title'] ) ? $this->settings['title'] : 'Koszt wysyłki';
+        $this->title = (null !== $this->get_option( 'title' ))  ?  $this->get_option( 'title' ) : 'Koszt wysyłki';
 
         // Save settings in admin if you have any defined
-        //add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
+        add_action( 'woocommerce_update_options_shipping_' . $this->id, array( $this, 'process_admin_options' ) );
 
         //START Price Settings
         $this->courier_price = ( null !== get_option('rbi_courier_price') ) ? get_option('rbi_courier_price') : 0;
@@ -739,6 +740,8 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
       );
 
       $courier_only_shipping_price = $need_courier_only_pack * $this->shipping_variant['courier']['price'];
+      
+      $total_shipping_price = 0;
 
       $total_shipping_price = $need_big_pallet * $this->shipping_variant['big_pallet']['price'] + $need_small_pallet * $this->shipping_variant['small_pallet']['price'] + $need_courier_pack * $this->shipping_variant['courier']['price'] + $separate_shipping_total_price + $courier_only_shipping_price;
       //$total_shipping_price = $this->shipping_variant['small_pallet']['price'];
@@ -747,7 +750,7 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
           'label' => $this->title,
           'cost' => 10//$total_shipping_price
       );*/
-
+      if ($total_shipping_price <= 0) $this->title = $this->title.': '.wc_price(0);
       $rate = array(
           'id' => $this->id,
           'label' => $this->title,//.$add_mess, .$add_mess3
