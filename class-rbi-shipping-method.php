@@ -6,15 +6,30 @@ class RBI_Shipping_Method extends WC_Shipping_Method {
      * @access public
      * @return void
      */
-    public function __construct( ) {
+    public function __construct( $instance_id = 0 ) {
         $this->id                 = 'rbi_shipping';
-        /*$this->instance_id           = absint( $instance_id );*/
+        $this->instance_id        = absint( $instance_id );
         $this->method_title       = __( 'Combined Shipping', 'rbi_shipping' );
         $this->method_description = __( 'Custom Shipping Method for RBI', 'rbi_shipping' );
-        /*$this->supports              = array(
+        $this->supports           = array(
     			'shipping-zones',
     			'instance-settings',
-    		);*/
+    		);
+        $this->instance_form_fields = array(
+          'enabled' => array(
+            'title' 		=> __( 'Enable/Disable' ),
+            'type' 			=> 'checkbox',
+            'label' 		=> __( 'Enable this shipping method' ),
+            'default' 		=> 'yes',
+          ),
+          'title' => array(
+            'title' 		=> __( 'Method Title' ),
+            'type' 			=> 'text',
+            'description' 	=> __( 'This controls the title which the user sees during checkout.' ),
+            'default'		=> __( 'Koszt wysyłki' ),
+            'desc_tip'		=> true
+          )
+        );
         /*$this->availability = 'including';
         $this->countries = array(
           'PL', // Poland
